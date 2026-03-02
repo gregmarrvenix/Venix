@@ -4,7 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Venix Time Tracker</title>
-  <script src="https://alcdn.msauth.net/browser/3.27.0/js/msal-browser.min.js"></script>
+  <script src="https://alcdn.msauth.net/browser/2.35.0/js/msal-browser.min.js"
+    integrity="sha384-PARf28kmic36Ve+O3DnUerRXFtOQ7ZDqRDGpLcbljly5/N39T2OV3kt3QsWOKeAX"
+    crossorigin="anonymous"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -374,17 +376,11 @@
     // ============================================================
     // MSAL Initialization
     // ============================================================
-    let msalInstance;
-    let msalReady = false;
-    let msalInitError = null;
+    const msalInstance = new msal.PublicClientApplication(msalConfig);
 
     async function initializeAuth() {
       const errorEl = document.getElementById('loginError');
       try {
-        msalInstance = new msal.PublicClientApplication(msalConfig);
-        await msalInstance.initialize();
-        msalReady = true;
-
         // Handle redirect response (returning from Microsoft login)
         const response = await msalInstance.handleRedirectPromise();
         if (response) {
@@ -401,8 +397,7 @@
         }
       } catch (error) {
         console.error('Auth initialization error:', error);
-        msalInitError = error;
-        errorEl.textContent = 'Init failed: ' + (error.errorCode || '') + ' ' + (error.errorMessage || error.message || String(error));
+        errorEl.textContent = (error.errorCode || 'error') + ': ' + (error.errorMessage || error.message || String(error));
         errorEl.style.display = 'block';
         showLogin();
       }
@@ -410,18 +405,11 @@
 
     async function signIn() {
       const errorEl = document.getElementById('loginError');
-      if (!msalReady) {
-        errorEl.textContent = msalInitError
-          ? 'Init failed: ' + (msalInitError.errorCode || '') + ' ' + (msalInitError.errorMessage || msalInitError.message || String(msalInitError))
-          : 'MSAL still loading. Please wait a moment and try again.';
-        errorEl.style.display = 'block';
-        return;
-      }
       try {
         await msalInstance.loginRedirect(loginRequest);
       } catch (error) {
         console.error('Login error:', error);
-        errorEl.textContent = 'Login failed: ' + (error.errorCode || '') + ' ' + (error.errorMessage || error.message || String(error));
+        errorEl.textContent = (error.errorCode || 'error') + ': ' + (error.errorMessage || error.message || String(error));
         errorEl.style.display = 'block';
       }
     }
