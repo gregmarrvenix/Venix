@@ -374,10 +374,15 @@
     // ============================================================
     // MSAL Initialization
     // ============================================================
-    const msalInstance = new msal.PublicClientApplication(msalConfig);
+    let msalInstance;
+    let msalReady = false;
 
     async function initializeAuth() {
+      const errorEl = document.getElementById('loginError');
       try {
+        msalInstance = await msal.PublicClientApplication.createPublicClientApplication(msalConfig);
+        msalReady = true;
+
         // Handle redirect response (returning from Microsoft login)
         const response = await msalInstance.handleRedirectPromise();
         if (response) {
@@ -394,7 +399,6 @@
         }
       } catch (error) {
         console.error('Auth initialization error:', error);
-        const errorEl = document.getElementById('loginError');
         errorEl.textContent = (error.errorCode || 'error') + ': ' + (error.errorMessage || error.message || String(error));
         errorEl.style.display = 'block';
         showLogin();
@@ -402,8 +406,19 @@
     }
 
     async function signIn() {
-      // Use redirect flow instead of popup (avoids popup blockers)
-      msalInstance.loginRedirect(loginRequest);
+      const errorEl = document.getElementById('loginError');
+      if (!msalReady) {
+        errorEl.textContent = 'MSAL not initialized yet. Please wait and try again.';
+        errorEl.style.display = 'block';
+        return;
+      }
+      try {
+        await msalInstance.loginRedirect(loginRequest);
+      } catch (error) {
+        console.error('Login error:', error);
+        errorEl.textContent = (error.errorCode || 'error') + ': ' + (error.errorMessage || error.message || String(error));
+        errorEl.style.display = 'block';
+      }
     }
 
     function signOut() {
