@@ -378,7 +378,7 @@
 
     async function initializeAuth() {
       try {
-        // Handle redirect response (if returning from a redirect login)
+        // Handle redirect response (returning from Microsoft login)
         const response = await msalInstance.handleRedirectPromise();
         if (response) {
           showApp(response.account);
@@ -394,31 +394,21 @@
         }
       } catch (error) {
         console.error('Auth initialization error:', error);
+        const errorEl = document.getElementById('loginError');
+        errorEl.textContent = (error.errorCode || 'error') + ': ' + (error.errorMessage || error.message || String(error));
+        errorEl.style.display = 'block';
         showLogin();
       }
     }
 
     async function signIn() {
-      try {
-        const response = await msalInstance.loginPopup(loginRequest);
-        showApp(response.account);
-      } catch (error) {
-        console.error('Login error:', error);
-        const errorEl = document.getElementById('loginError');
-        if (error.errorCode === 'user_cancelled') {
-          errorEl.textContent = 'Sign in was cancelled.';
-        } else {
-          errorEl.textContent = error.errorCode + ': ' + error.errorMessage;
-        }
-        errorEl.style.display = 'block';
-      }
+      // Use redirect flow instead of popup (avoids popup blockers)
+      msalInstance.loginRedirect(loginRequest);
     }
 
     function signOut() {
-      msalInstance.logoutPopup({
+      msalInstance.logoutRedirect({
         postLogoutRedirectUri: window.location.origin,
-      }).then(() => {
-        showLogin();
       });
     }
 
