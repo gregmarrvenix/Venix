@@ -408,7 +408,7 @@
         if (error.errorCode === 'user_cancelled') {
           errorEl.textContent = 'Sign in was cancelled.';
         } else {
-          errorEl.textContent = 'Sign in failed. Please try again.';
+          errorEl.textContent = error.errorCode + ': ' + error.errorMessage;
         }
         errorEl.style.display = 'block';
       }
