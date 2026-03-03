@@ -254,7 +254,7 @@ export function HarvestImport() {
         }
       }
 
-      // Build import entries
+      // Build import entries, filtering out invalid time ranges
       const importEntries: ImportEntry[] = entries
         .filter((e) => e.started_time && e.ended_time)
         .map((e) => {
@@ -284,7 +284,8 @@ export function HarvestImport() {
             break_minutes: 0,
             description,
           };
-        });
+        })
+        .filter((e) => e.end_time > e.start_time);
 
       const result = await apiFetch<{
         imported: number;
