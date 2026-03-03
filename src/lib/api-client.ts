@@ -12,28 +12,38 @@ export async function getAccessToken(): Promise<string> {
   const accounts = msalInstance.getAllAccounts();
   if (accounts.length === 0) throw new Error("No authenticated user");
 
-  // Try silent acquisition first
+  // Try silent acquisition
   try {
     const response = await msalInstance.acquireTokenSilent({
       ...loginRequest,
       account: accounts[0],
     });
-    const token = response.idToken || response.accessToken;
-    if (token) return token;
+    if (response.idToken) return response.idToken;
   } catch {
-    // Silent failed, will try popup below
+    // Silent failed, will try forced refresh below
   }
 
-  // Force interactive login to get a fresh token
-  const response = await msalInstance.acquireTokenPopup({
+  // Force a network refresh to get a fresh idToken
+  try {
+    const response = await msalInstance.acquireTokenSilent({
+      ...loginRequest,
+      account: accounts[0],
+      forceRefresh: true,
+    });
+    if (response.idToken) return response.idToken;
+  } catch {
+    // Forced refresh failed, will try redirect below
+  }
+
+  // Last resort: interactive redirect to get a new idToken
+  await msalInstance.acquireTokenRedirect({
     ...loginRequest,
     account: accounts[0],
   });
-  const token = response.idToken || response.accessToken;
-  if (!token) {
-    throw new Error("MSAL returned no token (idToken and accessToken both empty)");
-  }
-  return token;
+
+  // acquireTokenRedirect navigates away, so this line won't execute.
+  // After redirect back, the AuthGuard will pick up the new token.
+  throw new Error("Redirecting to login...");
 }
 
 export async function apiFetch<T>(
