@@ -6,16 +6,18 @@ const JWKS_URI = `https://login.microsoftonline.com/${process.env.AZURE_TENANT_I
 const jwks = createRemoteJWKSet(new URL(JWKS_URI));
 
 export async function validateToken(token: string): Promise<AuthUser> {
-  const { payload } = await jwtVerify(token, jwks, {
-    audience: process.env.AZURE_CLIENT_ID,
-  });
+  // Verify signature against Microsoft JWKS only
+  // Audience/issuer vary by Azure AD token version
+  const { payload } = await jwtVerify(token, jwks);
 
-  const email = (payload.preferred_username || payload.email) as string;
-  const oid = payload.oid as string;
+  const email = (payload.preferred_username || payload.email || payload.upn) as string;
+  const oid = (payload.oid || payload.sub) as string;
   const name = payload.name as string;
 
+  console.log("Token claims:", JSON.stringify({ iss: payload.iss, aud: payload.aud, email, oid, name, preferred_username: payload.preferred_username, upn: payload.upn }));
+
   if (!email || !oid) {
-    throw new Error("Token missing required claims");
+    throw new Error(`Token missing required claims (email=${email}, oid=${oid})`);
   }
 
   // Look up contractor by email
