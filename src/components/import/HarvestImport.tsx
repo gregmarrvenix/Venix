@@ -750,9 +750,14 @@ export function HarvestImport() {
                 <p className="font-medium text-red-400">Import Failed</p>
                 <p className="mt-1 text-sm text-red-300">{importError}</p>
               </div>
-              <Button variant="secondary" onClick={() => setStep(6)}>
-                Back to Preview
-              </Button>
+              <div className="flex gap-3">
+                <Button variant="secondary" onClick={() => setStep(6)}>
+                  Back to Preview
+                </Button>
+                <Button onClick={handleImport}>
+                  Retry Import
+                </Button>
+              </div>
             </>
           ) : importResult ? (
             <>
@@ -772,9 +777,16 @@ export function HarvestImport() {
                   </div>
                 )}
               </div>
-              <Button onClick={() => (window.location.href = "/")}>
-                Go to Time Entry
-              </Button>
+              <div className="flex gap-3">
+                {importResult.imported < importResult.total && (
+                  <Button variant="secondary" onClick={() => setStep(6)}>
+                    Back to Preview
+                  </Button>
+                )}
+                <Button onClick={() => (window.location.href = "/")}>
+                  Go to Time Entry
+                </Button>
+              </div>
             </>
           ) : null}
         </div>
