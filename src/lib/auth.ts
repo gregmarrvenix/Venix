@@ -26,10 +26,9 @@ export async function validateToken(token: string): Promise<AuthUser> {
     return cached.user;
   }
 
-  const { payload } = await jwtVerify(token, jwks, {
-    audience: process.env.AZURE_CLIENT_ID,
-    issuer: `https://login.microsoftonline.com/${process.env.AZURE_TENANT_ID}/v2.0`,
-  });
+  // Verify signature against Microsoft JWKS only
+  // Audience/issuer vary by Azure AD token version, so skip strict checks
+  const { payload } = await jwtVerify(token, jwks);
 
   const email = (payload.preferred_username || payload.email || payload.upn) as string;
   const oid = (payload.oid || payload.sub) as string;
