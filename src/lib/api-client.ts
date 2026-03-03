@@ -17,10 +17,10 @@ export async function getAccessToken(): Promise<string> {
       ...loginRequest,
       account: accounts[0],
     });
-    return response.idToken;
+    return response.idToken || response.accessToken;
   } catch {
     const response = await msalInstance.acquireTokenPopup(loginRequest);
-    return response.idToken;
+    return response.idToken || response.accessToken;
   }
 }
 
