@@ -19,9 +19,11 @@ export async function POST(request: Request) {
       email: user.email,
       display_name: user.display_name,
     });
-  } catch {
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("Auth validation error:", message);
     return NextResponse.json(
-      { error: "Invalid or expired token" },
+      { error: message },
       { status: 401 }
     );
   }

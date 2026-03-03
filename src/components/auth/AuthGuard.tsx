@@ -31,6 +31,7 @@ export default function AuthGuard({ children }: { children: ReactNode }) {
 
   const [authUser, setAuthUser] = useState<AuthContextValue | null>(null);
   const [denied, setDenied] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -57,7 +58,11 @@ export default function AuthGuard({ children }: { children: ReactNode }) {
         });
 
         if (!res.ok) {
-          if (!cancelled) setDenied(true);
+          const errBody = await res.json().catch(() => ({}));
+          if (!cancelled) {
+            setErrorMsg(errBody.error || `HTTP ${res.status}`);
+            setDenied(true);
+          }
           return;
         }
 
@@ -68,8 +73,11 @@ export default function AuthGuard({ children }: { children: ReactNode }) {
             displayName: data.display_name,
           });
         }
-      } catch {
-        if (!cancelled) setDenied(true);
+      } catch (err) {
+        if (!cancelled) {
+          setErrorMsg(err instanceof Error ? err.message : String(err));
+          setDenied(true);
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -100,6 +108,11 @@ export default function AuthGuard({ children }: { children: ReactNode }) {
         <p className="mt-2 text-slate-400">
           Contact your administrator to get access.
         </p>
+        {errorMsg && (
+          <p className="mt-4 max-w-md rounded bg-slate-800 p-3 text-sm text-red-400">
+            {errorMsg}
+          </p>
+        )}
       </div>
     );
   }
