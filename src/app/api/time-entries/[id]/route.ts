@@ -16,6 +16,7 @@ export async function PUT(
   const body = await request.json();
 
   const allowedFields = [
+    "contractor_id",
     "customer_id",
     "project_id",
     "entry_date",

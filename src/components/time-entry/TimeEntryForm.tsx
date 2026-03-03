@@ -1,17 +1,21 @@
 "use client";
 
 import { useState, useEffect, type FormEvent } from "react";
+import { useAuthContext } from "@/components/auth/AuthGuard";
 import { useCustomers } from "@/hooks/useCustomers";
 import { useProjects } from "@/hooks/useProjects";
+import { useContractors } from "@/hooks/useContractors";
 import { todayAEST } from "@/lib/timezone";
-import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
+import { DatePicker } from "@/components/ui/DatePicker";
+import { TimePicker } from "@/components/ui/TimePicker";
 import { VoiceInput } from "./VoiceInput";
 import type { TimeEntry } from "@/lib/types";
 
 interface TimeEntryFormProps {
   onSubmit: (data: {
+    contractor_id: string;
     entry_date: string;
     start_time: string;
     end_time: string;
@@ -23,17 +27,32 @@ interface TimeEntryFormProps {
 }
 
 export function TimeEntryForm({ onSubmit, initialData }: TimeEntryFormProps) {
+  const { contractorId } = useAuthContext();
+  const [selectedContractorId, setSelectedContractorId] = useState(
+    initialData?.contractor_id ?? contractorId
+  );
   const [date, setDate] = useState(initialData?.entry_date ?? todayAEST());
-  const [startTime, setStartTime] = useState(initialData?.start_time?.slice(0, 5) ?? "");
-  const [endTime, setEndTime] = useState(initialData?.end_time?.slice(0, 5) ?? "");
-  const [customerId, setCustomerId] = useState(initialData?.customer_id ?? "");
+  const [startTime, setStartTime] = useState(
+    initialData?.start_time?.slice(0, 5) ?? ""
+  );
+  const [endTime, setEndTime] = useState(
+    initialData?.end_time?.slice(0, 5) ?? ""
+  );
+  const [customerId, setCustomerId] = useState(
+    initialData?.customer_id ?? ""
+  );
   const [projectId, setProjectId] = useState(initialData?.project_id ?? "");
-  const [description, setDescription] = useState(initialData?.description ?? "");
+  const [description, setDescription] = useState(
+    initialData?.description ?? ""
+  );
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
 
+  const { contractors, loading: contractorsLoading } = useContractors();
   const { customers, loading: customersLoading } = useCustomers();
-  const { projects, loading: projectsLoading } = useProjects(customerId || undefined);
+  const { projects, loading: projectsLoading } = useProjects(
+    customerId || undefined
+  );
 
   useEffect(() => {
     if (!initialData) {
@@ -64,6 +83,7 @@ export function TimeEntryForm({ onSubmit, initialData }: TimeEntryFormProps) {
     setSubmitting(true);
     try {
       await onSubmit({
+        contractor_id: selectedContractorId,
         entry_date: date,
         start_time: startTime,
         end_time: endTime,
@@ -76,32 +96,52 @@ export function TimeEntryForm({ onSubmit, initialData }: TimeEntryFormProps) {
     }
   }
 
-  const customerOptions = customers.map((c) => ({ value: c.id, label: c.name }));
-  const projectOptions = projects.map((p) => ({ value: p.id, label: p.name }));
+  const contractorOptions = contractors
+    .filter((c) => c.is_active)
+    .map((c) => ({ value: c.id, label: c.display_name }));
+
+  const customerOptions = customers.map((c) => ({
+    value: c.id,
+    label: c.name,
+  }));
+  const projectOptions = projects.map((p) => ({
+    value: p.id,
+    label: p.name,
+  }));
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <Input
+      <Select
+        label="Contractor"
+        value={selectedContractorId}
+        onChange={(e) => setSelectedContractorId(e.target.value)}
+        options={[
+          {
+            value: "",
+            label: contractorsLoading ? "Loading..." : "Select contractor",
+          },
+          ...contractorOptions,
+        ]}
+      />
+
+      <DatePicker
         label="Date"
-        type="date"
         value={date}
-        onChange={(e) => setDate(e.target.value)}
+        onChange={setDate}
         error={errors.date}
       />
 
       <div className="grid grid-cols-2 gap-4">
-        <Input
+        <TimePicker
           label="Start Time"
-          type="time"
           value={startTime}
-          onChange={(e) => setStartTime(e.target.value)}
+          onChange={setStartTime}
           error={errors.startTime}
         />
-        <Input
+        <TimePicker
           label="End Time"
-          type="time"
           value={endTime}
-          onChange={(e) => setEndTime(e.target.value)}
+          onChange={setEndTime}
           error={errors.endTime}
         />
       </div>
@@ -110,7 +150,13 @@ export function TimeEntryForm({ onSubmit, initialData }: TimeEntryFormProps) {
         label="Customer"
         value={customerId}
         onChange={(e) => setCustomerId(e.target.value)}
-        options={[{ value: "", label: customersLoading ? "Loading..." : "Select customer" }, ...customerOptions]}
+        options={[
+          {
+            value: "",
+            label: customersLoading ? "Loading..." : "Select customer",
+          },
+          ...customerOptions,
+        ]}
         error={errors.customerId}
       />
 
@@ -118,13 +164,19 @@ export function TimeEntryForm({ onSubmit, initialData }: TimeEntryFormProps) {
         label="Project"
         value={projectId}
         onChange={(e) => setProjectId(e.target.value)}
-        options={[{ value: "", label: projectsLoading ? "Loading..." : "Select project" }, ...projectOptions]}
+        options={[
+          {
+            value: "",
+            label: projectsLoading ? "Loading..." : "Select project",
+          },
+          ...projectOptions,
+        ]}
         error={errors.projectId}
         disabled={!customerId}
       />
 
       <div>
-        <label className="block text-sm font-medium text-slate-300 mb-1">
+        <label className="block text-sm text-slate-400 mb-1">
           Description
         </label>
         <div className="relative">
@@ -132,11 +184,15 @@ export function TimeEntryForm({ onSubmit, initialData }: TimeEntryFormProps) {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={3}
-            className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 pr-10 text-slate-200 placeholder-slate-500 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus:outline-none"
+            className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 pr-10 text-sm text-slate-200 placeholder-slate-500 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus:outline-none"
             placeholder="What did you work on?"
           />
           <div className="absolute right-1 top-1">
-            <VoiceInput onResult={(text) => setDescription((prev) => prev ? `${prev} ${text}` : text)} />
+            <VoiceInput
+              onResult={(text) =>
+                setDescription((prev) => (prev ? `${prev} ${text}` : text))
+              }
+            />
           </div>
         </div>
         {errors.description && (

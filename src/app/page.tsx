@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useAuthContext } from "@/components/auth/AuthGuard";
 import { useTimeEntries } from "@/hooks/useTimeEntries";
 import { todayAEST } from "@/lib/timezone";
@@ -10,6 +11,7 @@ import { RecentEntries } from "@/components/time-entry/RecentEntries";
 export default function HomePage() {
   const { contractorId } = useAuthContext();
   const { addToast } = useToast();
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const today = todayAEST();
   const sevenDaysAgo = (() => {
@@ -18,7 +20,7 @@ export default function HomePage() {
     return d.toISOString().split("T")[0];
   })();
 
-  const { create, refresh } = useTimeEntries(contractorId, sevenDaysAgo, today);
+  const { create } = useTimeEntries(contractorId, sevenDaysAgo, today);
 
   return (
     <div className="space-y-6 py-6">
@@ -31,7 +33,7 @@ export default function HomePage() {
             try {
               await create(data);
               addToast("Time entry saved", "success");
-              refresh();
+              setRefreshKey((k) => k + 1);
             } catch (err) {
               addToast(
                 err instanceof Error ? err.message : "Failed to save entry",
@@ -46,7 +48,7 @@ export default function HomePage() {
         <h2 className="mb-4 text-lg font-semibold text-slate-200">
           Recent Entries
         </h2>
-        <RecentEntries />
+        <RecentEntries refreshKey={refreshKey} />
       </div>
     </div>
   );

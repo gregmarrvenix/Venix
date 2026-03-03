@@ -30,7 +30,7 @@ export function useTimeEntries(contractorId: string, from: string, to: string) {
     fetchEntries();
   }, [fetchEntries]);
 
-  const create = async (data: Omit<TimeEntry, "id" | "contractor_id" | "created_at" | "updated_at" | "contractor" | "customer" | "project">) => {
+  const create = async (data: Omit<TimeEntry, "id" | "created_at" | "updated_at" | "contractor" | "customer" | "project">) => {
     const entry = await apiFetch<TimeEntry>("/api/time-entries", {
       method: "POST",
       body: JSON.stringify(data),

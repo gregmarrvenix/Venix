@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useCustomers } from "@/hooks/useCustomers";
 import { nowAEST } from "@/lib/timezone";
 import { Select } from "@/components/ui/Select";
-import { Input } from "@/components/ui/Input";
+import { DatePicker } from "@/components/ui/DatePicker";
 import { Button } from "@/components/ui/Button";
 
 export interface ReportFilterValues {
@@ -20,7 +20,7 @@ interface ReportFiltersProps {
   onGenerate: (filters: ReportFilterValues) => void;
 }
 
-type Period = "last_month" | "prior_month" | "two_months_prior" | "custom";
+type Period = "this_month" | "last_month" | "prior_month" | "two_months_prior" | "custom";
 
 function getMonthRange(monthsBack: number): { from: string; to: string; label: string } {
   const now = nowAEST();
@@ -35,7 +35,7 @@ function getMonthRange(monthsBack: number): { from: string; to: string; label: s
 export function ReportFilters({ onGenerate }: ReportFiltersProps) {
   const { customers, loading: customersLoading } = useCustomers();
   const [customerId, setCustomerId] = useState("");
-  const [period, setPeriod] = useState<Period>("last_month");
+  const [period, setPeriod] = useState<Period>("this_month");
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
   const [groupByProject, setGroupByProject] = useState(false);
@@ -60,7 +60,7 @@ export function ReportFilters({ onGenerate }: ReportFiltersProps) {
       to = customTo;
       periodLabel = `${customFrom} to ${customTo}`;
     } else {
-      const monthsBack = period === "last_month" ? 1 : period === "prior_month" ? 2 : 3;
+      const monthsBack = period === "this_month" ? 0 : period === "last_month" ? 1 : period === "prior_month" ? 2 : 3;
       const range = getMonthRange(monthsBack);
       from = range.from;
       to = range.to;
@@ -82,6 +82,7 @@ export function ReportFilters({ onGenerate }: ReportFiltersProps) {
   const customerOptions = customers.map((c) => ({ value: c.id, label: c.name }));
 
   const periodOptions = [
+    { value: "this_month", label: "This month" },
     { value: "last_month", label: "Last calendar month" },
     { value: "prior_month", label: "Prior calendar month" },
     { value: "two_months_prior", label: "Two months prior" },
@@ -110,17 +111,15 @@ export function ReportFilters({ onGenerate }: ReportFiltersProps) {
 
       {period === "custom" && (
         <div className="grid grid-cols-2 gap-4">
-          <Input
+          <DatePicker
             label="From"
-            type="date"
             value={customFrom}
-            onChange={(e) => setCustomFrom(e.target.value)}
+            onChange={setCustomFrom}
           />
-          <Input
+          <DatePicker
             label="To"
-            type="date"
             value={customTo}
-            onChange={(e) => setCustomTo(e.target.value)}
+            onChange={setCustomTo}
           />
         </div>
       )}

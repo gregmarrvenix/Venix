@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useTimeEntries } from "@/hooks/useTimeEntries";
 import { useAuthContext } from "@/components/auth/AuthGuard";
 import { todayAEST, formatDate, formatTime, calculateHours } from "@/lib/timezone";
@@ -10,7 +10,11 @@ import { useToast } from "@/components/ui/Toast";
 import { TimeEntryForm } from "./TimeEntryForm";
 import type { TimeEntry } from "@/lib/types";
 
-export function RecentEntries() {
+interface RecentEntriesProps {
+  refreshKey?: number;
+}
+
+export function RecentEntries({ refreshKey }: RecentEntriesProps) {
   const { contractorId } = useAuthContext();
   const toast = useToast();
 
@@ -28,10 +32,15 @@ export function RecentEntries() {
     dateRange.to
   );
 
+  useEffect(() => {
+    if (refreshKey && refreshKey > 0) refresh();
+  }, [refreshKey, refresh]);
+
   const [editingEntry, setEditingEntry] = useState<TimeEntry | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   async function handleUpdate(data: {
+    contractor_id: string;
     entry_date: string;
     start_time: string;
     end_time: string;

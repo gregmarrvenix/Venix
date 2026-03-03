@@ -5,9 +5,14 @@ import {
   useContext,
   useEffect,
   useState,
+  useRef,
   type ReactNode,
 } from "react";
 import { useIsAuthenticated, useMsal } from "@azure/msal-react";
+import {
+  InteractionStatus,
+  InteractionRequiredAuthError,
+} from "@azure/msal-browser";
 import { loginRequest } from "@/lib/msal-config";
 import type { AuthUser } from "@/lib/types";
 import LoginScreen from "./LoginScreen";
@@ -17,6 +22,8 @@ interface AuthContextValue {
   displayName: string;
 }
 
+const AUTH_CACHE_KEY = "venix-auth-user";
+
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function useAuthContext(): AuthContextValue {
@@ -25,25 +32,66 @@ export function useAuthContext(): AuthContextValue {
   return ctx;
 }
 
+function getCachedAuth(): AuthContextValue | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const cached = sessionStorage.getItem(AUTH_CACHE_KEY);
+    if (cached) return JSON.parse(cached);
+  } catch {
+    /* ignore */
+  }
+  return null;
+}
+
 export default function AuthGuard({ children }: { children: ReactNode }) {
   const isAuthenticated = useIsAuthenticated();
-  const { instance, accounts } = useMsal();
+  const { instance, inProgress } = useMsal();
 
-  const [authUser, setAuthUser] = useState<AuthContextValue | null>(null);
+  const [authUser, setAuthUser] = useState<AuthContextValue | null>(
+    getCachedAuth
+  );
   const [denied, setDenied] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!getCachedAuth());
+  const validating = useRef(false);
+
+  // Clear cache when user logs out
+  useEffect(() => {
+    if (!isAuthenticated && inProgress === InteractionStatus.None) {
+      sessionStorage.removeItem(AUTH_CACHE_KEY);
+      setAuthUser(null);
+    }
+  }, [isAuthenticated, inProgress]);
 
   useEffect(() => {
-    if (!isAuthenticated || accounts.length === 0) {
+    // Wait until MSAL is done with any in-progress interactions
+    if (inProgress !== InteractionStatus.None) return;
+
+    if (!isAuthenticated) {
       setLoading(false);
       return;
     }
+
+    // Already validated (from cache or previous run)
+    if (authUser) {
+      setLoading(false);
+      return;
+    }
+
+    // Prevent concurrent validations
+    if (validating.current) return;
+    validating.current = true;
 
     let cancelled = false;
 
     async function validate() {
       try {
+        const accounts = instance.getAllAccounts();
+        if (accounts.length === 0) {
+          if (!cancelled) setLoading(false);
+          return;
+        }
+
         const tokenResponse = await instance.acquireTokenSilent({
           ...loginRequest,
           account: accounts[0],
@@ -68,31 +116,43 @@ export default function AuthGuard({ children }: { children: ReactNode }) {
 
         const data: AuthUser = await res.json();
         if (!cancelled) {
-          setAuthUser({
+          const value = {
             contractorId: data.contractor_id,
             displayName: data.display_name,
-          });
+          };
+          setAuthUser(value);
+          sessionStorage.setItem(AUTH_CACHE_KEY, JSON.stringify(value));
         }
       } catch (err) {
-        if (!cancelled) {
-          setErrorMsg(err instanceof Error ? err.message : String(err));
-          setDenied(true);
+        if (cancelled) return;
+
+        // If silent token acquisition fails, fall back to redirect
+        if (err instanceof InteractionRequiredAuthError) {
+          instance.acquireTokenRedirect(loginRequest);
+          return;
         }
+
+        setErrorMsg(err instanceof Error ? err.message : String(err));
+        setDenied(true);
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+          validating.current = false;
+        }
       }
     }
 
     validate();
     return () => {
       cancelled = true;
+      validating.current = false;
     };
-  }, [isAuthenticated, accounts, instance]);
+  }, [isAuthenticated, inProgress, instance, authUser]);
 
-  if (loading) {
+  if (loading || inProgress !== InteractionStatus.None) {
     return (
       <div className="flex h-screen items-center justify-center bg-slate-900">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-600 border-t-blue-500" />
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-600 border-t-indigo-500" />
       </div>
     );
   }

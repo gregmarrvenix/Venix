@@ -9,7 +9,7 @@ export const msalConfig: Configuration = {
       typeof window !== "undefined" ? window.location.origin : "",
   },
   cache: {
-    cacheLocation: "sessionStorage",
+    cacheLocation: "localStorage",
     storeAuthStateInCookie: false,
   },
   system: {

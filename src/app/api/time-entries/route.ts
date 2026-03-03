@@ -75,7 +75,7 @@ export async function POST(request: Request) {
   const { data, error } = await supabase
     .from("time_entries")
     .insert({
-      contractor_id: user.contractor_id,
+      contractor_id: body.contractor_id || user.contractor_id,
       customer_id: body.customer_id,
       project_id: body.project_id,
       entry_date: body.entry_date,
