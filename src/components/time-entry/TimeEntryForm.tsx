@@ -2,7 +2,6 @@
 
 import { useState, useEffect, type FormEvent } from "react";
 import { useAuthContext } from "@/components/auth/AuthGuard";
-import { useCustomers } from "@/hooks/useCustomers";
 import { useProjects } from "@/hooks/useProjects";
 import { useContractors } from "@/hooks/useContractors";
 import { todayAEST } from "@/lib/timezone";
@@ -11,6 +10,7 @@ import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { TimePicker } from "@/components/ui/TimePicker";
+import { ProjectPicker } from "@/components/ui/ProjectPicker";
 import { VoiceInput } from "./VoiceInput";
 import type { TimeEntry } from "@/lib/types";
 
@@ -54,16 +54,7 @@ export function TimeEntryForm({ onSubmit, initialData }: TimeEntryFormProps) {
   const [submitting, setSubmitting] = useState(false);
 
   const { contractors, loading: contractorsLoading } = useContractors();
-  const { customers, loading: customersLoading } = useCustomers();
-  const { projects, loading: projectsLoading } = useProjects(
-    customerId || undefined
-  );
-
-  useEffect(() => {
-    if (!initialData) {
-      setProjectId("");
-    }
-  }, [customerId, initialData]);
+  const { projects } = useProjects();
 
   // Default times and break for "Day Rate Consulting" project
   useEffect(() => {
@@ -119,15 +110,6 @@ export function TimeEntryForm({ onSubmit, initialData }: TimeEntryFormProps) {
     .filter((c) => c.is_active)
     .map((c) => ({ value: c.id, label: c.display_name }));
 
-  const customerOptions = customers.map((c) => ({
-    value: c.id,
-    label: c.name,
-  }));
-  const projectOptions = projects.map((p) => ({
-    value: p.id,
-    label: p.name,
-  }));
-
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <Select
@@ -143,33 +125,14 @@ export function TimeEntryForm({ onSubmit, initialData }: TimeEntryFormProps) {
         ]}
       />
 
-      <Select
-        label="Customer"
-        value={customerId}
-        onChange={(e) => setCustomerId(e.target.value)}
-        options={[
-          {
-            value: "",
-            label: customersLoading ? "Loading..." : "Select customer",
-          },
-          ...customerOptions,
-        ]}
-        error={errors.customerId}
-      />
-
-      <Select
-        label="Project"
+      <ProjectPicker
+        label="Project / Task"
         value={projectId}
-        onChange={(e) => setProjectId(e.target.value)}
-        options={[
-          {
-            value: "",
-            label: projectsLoading ? "Loading..." : "Select project",
-          },
-          ...projectOptions,
-        ]}
-        error={errors.projectId}
-        disabled={!customerId}
+        onChange={(pId, cId) => {
+          setProjectId(pId);
+          setCustomerId(cId);
+        }}
+        error={errors.customerId || errors.projectId}
       />
 
       <DatePicker

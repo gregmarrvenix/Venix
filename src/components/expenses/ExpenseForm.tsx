@@ -1,15 +1,14 @@
 "use client";
 
-import { useState, useEffect, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { useAuthContext } from "@/components/auth/AuthGuard";
-import { useCustomers } from "@/hooks/useCustomers";
-import { useProjects } from "@/hooks/useProjects";
 import { useContractors } from "@/hooks/useContractors";
 import { todayAEST } from "@/lib/timezone";
 import { Select } from "@/components/ui/Select";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { DatePicker } from "@/components/ui/DatePicker";
+import { ProjectPicker } from "@/components/ui/ProjectPicker";
 import type { Expense } from "@/lib/types";
 
 const EXPENSE_CATEGORIES = [
@@ -60,16 +59,6 @@ export function ExpenseForm({ onSubmit, initialData }: ExpenseFormProps) {
   const [submitting, setSubmitting] = useState(false);
 
   const { contractors, loading: contractorsLoading } = useContractors();
-  const { customers, loading: customersLoading } = useCustomers();
-  const { projects, loading: projectsLoading } = useProjects(
-    customerId || undefined
-  );
-
-  useEffect(() => {
-    if (!initialData) {
-      setProjectId("");
-    }
-  }, [customerId, initialData]);
 
   function validate() {
     const errs: Record<string, string> = {};
@@ -109,15 +98,6 @@ export function ExpenseForm({ onSubmit, initialData }: ExpenseFormProps) {
     .filter((c) => c.is_active)
     .map((c) => ({ value: c.id, label: c.display_name }));
 
-  const customerOptions = customers.map((c) => ({
-    value: c.id,
-    label: c.name,
-  }));
-  const projectOptions = projects.map((p) => ({
-    value: p.id,
-    label: p.name,
-  }));
-
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <Select
@@ -133,33 +113,14 @@ export function ExpenseForm({ onSubmit, initialData }: ExpenseFormProps) {
         ]}
       />
 
-      <Select
-        label="Customer"
-        value={customerId}
-        onChange={(e) => setCustomerId(e.target.value)}
-        options={[
-          {
-            value: "",
-            label: customersLoading ? "Loading..." : "Select customer",
-          },
-          ...customerOptions,
-        ]}
-        error={errors.customerId}
-      />
-
-      <Select
-        label="Project"
+      <ProjectPicker
+        label="Project / Task"
         value={projectId}
-        onChange={(e) => setProjectId(e.target.value)}
-        options={[
-          {
-            value: "",
-            label: projectsLoading ? "Loading..." : "Select project",
-          },
-          ...projectOptions,
-        ]}
-        error={errors.projectId}
-        disabled={!customerId}
+        onChange={(pId, cId) => {
+          setProjectId(pId);
+          setCustomerId(cId);
+        }}
+        error={errors.customerId || errors.projectId}
       />
 
       <DatePicker
