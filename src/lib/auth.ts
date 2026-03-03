@@ -7,7 +7,10 @@ const jwks = createRemoteJWKSet(new URL(JWKS_URI));
 
 export async function validateToken(token: string): Promise<AuthUser> {
   const { payload } = await jwtVerify(token, jwks, {
-    issuer: `https://login.microsoftonline.com/${process.env.AZURE_TENANT_ID}/v2.0`,
+    issuer: [
+      `https://login.microsoftonline.com/${process.env.AZURE_TENANT_ID}/v2.0`,
+      `https://sts.windows.net/${process.env.AZURE_TENANT_ID}/`,
+    ],
     audience: process.env.AZURE_CLIENT_ID,
   });
 
