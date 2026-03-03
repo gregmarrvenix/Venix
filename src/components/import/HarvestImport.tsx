@@ -128,20 +128,34 @@ export function HarvestImport() {
     setFetchError("");
 
     try {
-      const data = await apiFetch<{
-        entries: HarvestTimeEntry[];
-        total: number;
-      }>("/api/harvest/entries", {
-        method: "POST",
-        body: JSON.stringify({ token, accountId, from: fromDate, to: toDate }),
-      });
+      // Fetch directly from Harvest API (no server proxy needed)
+      const allEntries: HarvestTimeEntry[] = [];
+      let page = 1;
+      while (true) {
+        const url = `https://api.harvestapp.com/v2/time_entries?from=${encodeURIComponent(fromDate)}&to=${encodeURIComponent(toDate)}&per_page=2000&page=${page}`;
+        const res = await fetch(url, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Harvest-Account-Id": accountId,
+            "User-Agent": "VenixTimeTracker",
+          },
+        });
+        if (!res.ok) {
+          const text = await res.text();
+          throw new Error(`Harvest API error (${res.status}): ${text}`);
+        }
+        const data = await res.json();
+        allEntries.push(...data.time_entries);
+        if (!data.next_page) break;
+        page = data.next_page;
+      }
 
-      setEntries(data.entries);
+      setEntries(allEntries);
 
       // Build client mappings with auto-match
       const clientMap: ClientMapping[] = [];
       const seenClients = new Set<number>();
-      data.entries.forEach((e) => {
+      allEntries.forEach((e) => {
         if (!seenClients.has(e.client.id)) {
           seenClients.add(e.client.id);
           clientMap.push({
@@ -156,7 +170,7 @@ export function HarvestImport() {
       // Build project mappings with auto-match
       const projMap: ProjectMapping[] = [];
       const seenProjects = new Set<number>();
-      data.entries.forEach((e) => {
+      allEntries.forEach((e) => {
         if (!seenProjects.has(e.project.id)) {
           seenProjects.add(e.project.id);
           const clientMapping = clientMap.find(
@@ -178,7 +192,7 @@ export function HarvestImport() {
       // Build user mappings
       const userMap: UserMapping[] = [];
       const seenUsers = new Set<number>();
-      data.entries.forEach((e) => {
+      allEntries.forEach((e) => {
         if (!seenUsers.has(e.user.id)) {
           seenUsers.add(e.user.id);
           userMap.push({
