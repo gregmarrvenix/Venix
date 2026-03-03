@@ -7,6 +7,7 @@ import { useProjects } from "@/hooks/useProjects";
 import { useContractors } from "@/hooks/useContractors";
 import { todayAEST } from "@/lib/timezone";
 import { Select } from "@/components/ui/Select";
+import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { TimePicker } from "@/components/ui/TimePicker";
@@ -19,6 +20,7 @@ interface TimeEntryFormProps {
     entry_date: string;
     start_time: string;
     end_time: string;
+    break_minutes: number;
     customer_id: string;
     project_id: string;
     description: string;
@@ -42,6 +44,9 @@ export function TimeEntryForm({ onSubmit, initialData }: TimeEntryFormProps) {
     initialData?.customer_id ?? ""
   );
   const [projectId, setProjectId] = useState(initialData?.project_id ?? "");
+  const [breakMinutes, setBreakMinutes] = useState(
+    initialData?.break_minutes ?? 0
+  );
   const [description, setDescription] = useState(
     initialData?.description ?? ""
   );
@@ -60,13 +65,16 @@ export function TimeEntryForm({ onSubmit, initialData }: TimeEntryFormProps) {
     }
   }, [customerId, initialData]);
 
-  // Default times for "Day Rate Consulting" project
+  // Default times and break for "Day Rate Consulting" project
   useEffect(() => {
     if (!projectId || initialData) return;
     const project = projects.find((p) => p.id === projectId);
     if (project?.name === "Day Rate Consulting") {
       setStartTime("09:00");
       setEndTime("17:00");
+      setBreakMinutes(30);
+    } else {
+      setBreakMinutes(0);
     }
   }, [projectId, projects, initialData]);
 
@@ -97,6 +105,7 @@ export function TimeEntryForm({ onSubmit, initialData }: TimeEntryFormProps) {
         entry_date: date,
         start_time: startTime,
         end_time: endTime,
+        break_minutes: breakMinutes,
         customer_id: customerId,
         project_id: projectId,
         description: description.trim(),
@@ -170,7 +179,7 @@ export function TimeEntryForm({ onSubmit, initialData }: TimeEntryFormProps) {
         error={errors.date}
       />
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <TimePicker
           label="Start Time"
           value={startTime}
@@ -182,6 +191,13 @@ export function TimeEntryForm({ onSubmit, initialData }: TimeEntryFormProps) {
           value={endTime}
           onChange={setEndTime}
           error={errors.endTime}
+        />
+        <Input
+          label="Break (mins)"
+          type="number"
+          min={0}
+          value={breakMinutes}
+          onChange={(e) => setBreakMinutes(parseInt(e.target.value) || 0)}
         />
       </div>
 

@@ -34,6 +34,7 @@ export interface TimeEntry {
   entry_date: string;
   start_time: string;
   end_time: string;
+  break_minutes: number;
   description: string;
   created_at: string;
   updated_at: string;

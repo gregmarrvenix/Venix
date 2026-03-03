@@ -70,6 +70,7 @@ export interface ImportEntry {
   entry_date: string;
   start_time: string;
   end_time: string;
+  break_minutes: number;
   description: string;
 }
 

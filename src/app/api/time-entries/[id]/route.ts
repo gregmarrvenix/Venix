@@ -22,6 +22,7 @@ export async function PUT(
     "entry_date",
     "start_time",
     "end_time",
+    "break_minutes",
     "description",
   ];
   const updates: Record<string, unknown> = {

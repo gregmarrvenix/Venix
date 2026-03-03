@@ -46,6 +46,7 @@ export async function POST(request: Request) {
         entry_date: e.entry_date,
         start_time: e.start_time,
         end_time: e.end_time,
+        break_minutes: e.break_minutes ?? 0,
         description: e.description || "",
       }))
     );

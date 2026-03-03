@@ -81,6 +81,7 @@ export async function POST(request: Request) {
       entry_date: body.entry_date,
       start_time: body.start_time,
       end_time: body.end_time,
+      break_minutes: body.break_minutes ?? 0,
       description: body.description ?? "",
     })
     .select()

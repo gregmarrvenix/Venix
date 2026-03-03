@@ -44,5 +44,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  // Auto-create default "Ad-Hoc IT Support" project for new customer
+  await supabase
+    .from("projects")
+    .insert({ customer_id: data.id, name: "Ad-Hoc IT Support" });
+
   return NextResponse.json(data, { status: 201 });
 }

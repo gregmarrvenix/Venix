@@ -47,6 +47,8 @@ export function ReportFilters({ onGenerate }: ReportFiltersProps) {
       return;
     }
 
+    const isAllCustomers = customerId === "__all__";
+
     let from: string;
     let to: string;
     let periodLabel: string;
@@ -67,11 +69,11 @@ export function ReportFilters({ onGenerate }: ReportFiltersProps) {
       periodLabel = range.label;
     }
 
-    const customer = customers.find((c) => c.id === customerId);
+    const customer = isAllCustomers ? null : customers.find((c) => c.id === customerId);
     setError("");
     onGenerate({
       customer_id: customerId,
-      customerName: customer?.name ?? "",
+      customerName: isAllCustomers ? "All Customers" : (customer?.name ?? ""),
       from,
       to,
       group_by_project: groupByProject,
@@ -79,7 +81,10 @@ export function ReportFilters({ onGenerate }: ReportFiltersProps) {
     });
   }
 
-  const customerOptions = customers.map((c) => ({ value: c.id, label: c.name }));
+  const customerOptions = [
+    { value: "__all__", label: "All Customers" },
+    ...customers.map((c) => ({ value: c.id, label: c.name })),
+  ];
 
   const periodOptions = [
     { value: "last_month", label: "Last calendar month" },

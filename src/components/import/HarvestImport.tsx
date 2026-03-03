@@ -261,6 +261,7 @@ export function HarvestImport() {
             entry_date: e.spent_date,
             start_time: parseHarvestTime(e.started_time!),
             end_time: parseHarvestTime(e.ended_time!),
+            break_minutes: 0,
             description,
           };
         });

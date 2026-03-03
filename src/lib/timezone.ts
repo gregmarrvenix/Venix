@@ -24,8 +24,8 @@ export function formatTime(timeStr: string): string {
   return timeStr.slice(0, 5);
 }
 
-export function calculateHours(startTime: string, endTime: string): number {
+export function calculateHours(startTime: string, endTime: string, breakMinutes = 0): number {
   const [sh, sm] = startTime.split(":").map(Number);
   const [eh, em] = endTime.split(":").map(Number);
-  return (eh * 60 + em - (sh * 60 + sm)) / 60;
+  return (eh * 60 + em - (sh * 60 + sm) - breakMinutes) / 60;
 }

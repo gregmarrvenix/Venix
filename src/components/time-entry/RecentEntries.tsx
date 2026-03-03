@@ -44,6 +44,7 @@ export function RecentEntries({ refreshKey }: RecentEntriesProps) {
     entry_date: string;
     start_time: string;
     end_time: string;
+    break_minutes: number;
     customer_id: string;
     project_id: string;
     description: string;
@@ -105,7 +106,7 @@ export function RecentEntries({ refreshKey }: RecentEntriesProps) {
                     {formatTime(entry.start_time)} - {formatTime(entry.end_time)}
                   </span>
                   <span className="text-indigo-400">
-                    {calculateHours(entry.start_time, entry.end_time).toFixed(1)}h
+                    {calculateHours(entry.start_time, entry.end_time, entry.break_minutes ?? 0).toFixed(1)}h
                   </span>
                 </div>
                 <div className="mt-1 text-sm font-medium text-slate-200">

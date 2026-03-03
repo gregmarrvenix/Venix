@@ -39,14 +39,8 @@ export function ReportPreview({ filters }: ReportPreviewProps) {
 
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `report-${filters.customerName}-${filters.periodLabel}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      toast.success("PDF downloaded");
+      window.open(url, "_blank");
+      toast.success("PDF opened in new tab");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to generate PDF");
     } finally {

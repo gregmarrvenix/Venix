@@ -40,6 +40,7 @@ CREATE TABLE time_entries (
   entry_date DATE NOT NULL,
   start_time TIME NOT NULL,
   end_time TIME NOT NULL,
+  break_minutes INTEGER NOT NULL DEFAULT 0,
   description TEXT,
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now(),

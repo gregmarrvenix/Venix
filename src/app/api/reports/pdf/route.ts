@@ -38,29 +38,42 @@ export async function POST(request: Request) {
     );
   }
 
-  // Get customer name
-  const { data: customer, error: customerError } = await supabase
-    .from("customers")
-    .select("name")
-    .eq("id", body.customer_id)
-    .single();
+  const isAllCustomers = body.customer_id === "__all__";
+  let customerName: string;
 
-  if (customerError || !customer) {
-    return NextResponse.json(
-      { error: "Customer not found" },
-      { status: 404 }
-    );
+  if (isAllCustomers) {
+    customerName = "All Customers";
+  } else {
+    // Get customer name
+    const { data: customer, error: customerError } = await supabase
+      .from("customers")
+      .select("name")
+      .eq("id", body.customer_id)
+      .single();
+
+    if (customerError || !customer) {
+      return NextResponse.json(
+        { error: "Customer not found" },
+        { status: 404 }
+      );
+    }
+    customerName = customer.name;
   }
 
-  // Query time entries for the customer within date range
-  const { data: entries, error: entriesError } = await supabase
+  // Query time entries within date range
+  let query = supabase
     .from("time_entries")
-    .select("*, contractor:contractors(*), project:projects(*)")
-    .eq("customer_id", body.customer_id)
+    .select("*, contractor:contractors(*), customer:customers(*), project:projects(*)")
     .gte("entry_date", body.from)
     .lte("entry_date", body.to)
     .order("entry_date")
     .order("start_time");
+
+  if (!isAllCustomers) {
+    query = query.eq("customer_id", body.customer_id);
+  }
+
+  const { data: entries, error: entriesError } = await query;
 
   if (entriesError) {
     return NextResponse.json(
@@ -72,7 +85,7 @@ export async function POST(request: Request) {
   const logoPng = await getLogoPng();
 
   const pdfBytes = generateTimeReport({
-    customerName: customer.name,
+    customerName,
     periodLabel: `${body.from} — ${body.to}`,
     entries: entries ?? [],
     groupByProject: body.group_by_project ?? false,
@@ -83,7 +96,7 @@ export async function POST(request: Request) {
     status: 200,
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename="time-report-${body.from}-${body.to}.pdf"`,
+      "Content-Disposition": `inline; filename="time-report-${body.from}-${body.to}.pdf"`,
     },
   });
 }

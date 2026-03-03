@@ -101,7 +101,7 @@ export function generateTimeReport(options: PdfOptions): Uint8Array {
       });
 
       const subtotal = projectEntries.reduce(
-        (sum, e) => sum + calculateHours(e.start_time, e.end_time),
+        (sum, e) => sum + calculateHours(e.start_time, e.end_time, e.break_minutes ?? 0),
         0
       );
       grandTotal += subtotal;
@@ -144,7 +144,7 @@ export function generateTimeReport(options: PdfOptions): Uint8Array {
     });
 
     const total = sorted.reduce(
-      (sum, e) => sum + calculateHours(e.start_time, e.end_time),
+      (sum, e) => sum + calculateHours(e.start_time, e.end_time, e.break_minutes ?? 0),
       0
     );
 
