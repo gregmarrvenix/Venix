@@ -6,31 +6,40 @@ import { getCached, setCache, isStale } from "@/lib/cache";
 import type { Customer } from "@/lib/types";
 
 const CACHE_KEY = "customers";
+const CACHE_KEY_ALL = "customers:all";
 
-export function useCustomers() {
+interface UseCustomersOptions {
+  includeInactive?: boolean;
+}
+
+export function useCustomers(options?: UseCustomersOptions) {
+  const includeInactive = options?.includeInactive ?? false;
+  const cacheKey = includeInactive ? CACHE_KEY_ALL : CACHE_KEY;
+
   const [customers, setCustomers] = useState<Customer[]>(
-    () => getCached<Customer[]>(CACHE_KEY) ?? []
+    () => getCached<Customer[]>(cacheKey) ?? []
   );
-  const [loading, setLoading] = useState(() => !getCached(CACHE_KEY));
+  const [loading, setLoading] = useState(() => !getCached(cacheKey));
 
   const fetchCustomers = useCallback(async () => {
-    const cached = getCached<Customer[]>(CACHE_KEY);
-    if (cached && !isStale(CACHE_KEY)) {
+    const cached = getCached<Customer[]>(cacheKey);
+    if (cached && !isStale(cacheKey)) {
       setCustomers(cached);
       setLoading(false);
       return;
     }
     if (!cached) setLoading(true);
     try {
-      const data = await apiFetch<Customer[]>("/api/customers");
+      const url = includeInactive ? "/api/customers?include_inactive=true" : "/api/customers";
+      const data = await apiFetch<Customer[]>(url);
       setCustomers(data);
-      setCache(CACHE_KEY, data);
+      setCache(cacheKey, data);
     } catch (err) {
       console.error("Failed to fetch customers:", err);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [includeInactive, cacheKey]);
 
   useEffect(() => {
     fetchCustomers();
@@ -43,7 +52,7 @@ export function useCustomers() {
     });
     setCustomers((prev) => {
       const next = [...prev, customer];
-      setCache(CACHE_KEY, next);
+      setCache(cacheKey, next);
       return next;
     });
     return customer;
@@ -56,7 +65,7 @@ export function useCustomers() {
     });
     setCustomers((prev) => {
       const next = prev.map((c) => (c.id === id ? customer : c));
-      setCache(CACHE_KEY, next);
+      setCache(cacheKey, next);
       return next;
     });
     return customer;
@@ -66,7 +75,7 @@ export function useCustomers() {
     await apiFetch(`/api/customers/${id}`, { method: "DELETE" });
     setCustomers((prev) => {
       const next = prev.filter((c) => c.id !== id);
-      setCache(CACHE_KEY, next);
+      setCache(cacheKey, next);
       return next;
     });
   };

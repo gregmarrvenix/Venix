@@ -20,7 +20,7 @@ export default function HomePage() {
     return d.toISOString().split("T")[0];
   })();
 
-  const { create } = useTimeEntries(contractorId, sevenDaysAgo, today);
+  const { create } = useTimeEntries({ contractorId, from: sevenDaysAgo, to: today });
 
   return (
     <div className="space-y-6 py-6">

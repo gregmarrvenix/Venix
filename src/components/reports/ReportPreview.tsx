@@ -1,12 +1,41 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { apiFetch, getAccessToken } from "@/lib/api-client";
+import { apiFetch } from "@/lib/api-client";
 import { formatDate, formatTime, calculateHours } from "@/lib/timezone";
+import { generateTimeReport } from "@/lib/pdf-generator";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
 import type { ReportFilterValues } from "./ReportFilters";
 import type { TimeEntry } from "@/lib/types";
+
+let cachedClientLogo: string | null = null;
+
+async function getClientLogo(): Promise<string | undefined> {
+  if (cachedClientLogo !== null) return cachedClientLogo || undefined;
+  try {
+    return new Promise<string | undefined>((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext("2d");
+        ctx?.drawImage(img, 0, 0);
+        cachedClientLogo = canvas.toDataURL("image/png");
+        resolve(cachedClientLogo);
+      };
+      img.onerror = () => {
+        cachedClientLogo = "";
+        resolve(undefined);
+      };
+      img.src = "/logo.webp";
+    });
+  } catch {
+    cachedClientLogo = "";
+    return undefined;
+  }
+}
 
 interface ReportPreviewProps {
   filters: ReportFilterValues;
@@ -49,28 +78,16 @@ export function ReportPreview({ filters }: ReportPreviewProps) {
   async function handleGeneratePdf() {
     setGenerating(true);
     try {
-      const token = await getAccessToken();
-      const res = await fetch("/api/reports/pdf", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          customer_id: filters.customer_id,
-          from: filters.from,
-          to: filters.to,
-          group_by_project: filters.group_by_project,
-          period_label: filters.periodLabel,
-        }),
+      const logoPng = await getClientLogo();
+      const pdfBytes = generateTimeReport({
+        customerName: filters.customerName || "Unknown",
+        periodLabel: filters.periodLabel || `${filters.from} — ${filters.to}`,
+        entries,
+        groupByProject: filters.group_by_project ?? false,
+        logoPng,
       });
 
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: "PDF generation failed" }));
-        throw new Error(err.error || "PDF generation failed");
-      }
-
-      const blob = await res.blob();
+      const blob = new Blob([pdfBytes], { type: "application/pdf" });
       const url = URL.createObjectURL(blob);
       window.open(url, "_blank");
       toast.success("PDF opened in new tab");
@@ -82,9 +99,14 @@ export function ReportPreview({ filters }: ReportPreviewProps) {
   }
 
   const isAllCustomers = filters.customer_id === "__all__";
+  const groupByProject = filters.group_by_project ?? false;
 
-  const grouped = isAllCustomers
-    ? groupByCustomer(entries)
+  const customerGrouped = isAllCustomers
+    ? groupByCustomerFn(entries)
+    : null;
+
+  const projectGrouped = !isAllCustomers && groupByProject
+    ? groupByProjectFn(entries)
     : null;
 
   const totalHours = entries.reduce(
@@ -122,12 +144,24 @@ export function ReportPreview({ filters }: ReportPreviewProps) {
         </div>
       ) : entries.length === 0 ? (
         <div className="py-8 text-center text-slate-400">No entries found for this period</div>
-      ) : isAllCustomers && grouped ? (
+      ) : isAllCustomers && customerGrouped ? (
         <div className="space-y-6">
-          {grouped.map(({ customerName, entries: custEntries, total }) => (
+          {customerGrouped.map(({ customerName, entries: custEntries, total }) => (
             <div key={customerName}>
               <h4 className="text-sm font-medium text-purple-400 mb-2">{customerName}</h4>
               <EntryTable entries={custEntries} showCustomer={false} />
+              <div className="text-right text-sm text-slate-300 mt-1 font-medium">
+                Subtotal: {total.toFixed(2)}h
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : projectGrouped ? (
+        <div className="space-y-6">
+          {projectGrouped.map(({ projectName, entries: projEntries, total }) => (
+            <div key={projectName}>
+              <h4 className="text-sm font-medium text-indigo-400 mb-2">{projectName}</h4>
+              <EntryTable entries={projEntries} showCustomer={false} />
               <div className="text-right text-sm text-slate-300 mt-1 font-medium">
                 Subtotal: {total.toFixed(2)}h
               </div>
@@ -181,7 +215,7 @@ function EntryTable({ entries, showCustomer }: { entries: TimeEntry[]; showCusto
   );
 }
 
-function groupByCustomer(entries: TimeEntry[]) {
+function groupByCustomerFn(entries: TimeEntry[]) {
   const map = new Map<string, TimeEntry[]>();
   for (const entry of entries) {
     const name = entry.customer?.name || "Unknown";
@@ -190,6 +224,23 @@ function groupByCustomer(entries: TimeEntry[]) {
   }
   return Array.from(map.entries()).map(([customerName, entries]) => ({
     customerName,
+    entries,
+    total: entries.reduce(
+      (sum, e) => sum + calculateHours(e.start_time, e.end_time, e.break_minutes ?? 0),
+      0
+    ),
+  }));
+}
+
+function groupByProjectFn(entries: TimeEntry[]) {
+  const map = new Map<string, TimeEntry[]>();
+  for (const entry of entries) {
+    const name = entry.project?.name || "No Project";
+    if (!map.has(name)) map.set(name, []);
+    map.get(name)!.push(entry);
+  }
+  return Array.from(map.entries()).map(([projectName, entries]) => ({
+    projectName,
     entries,
     total: entries.reduce(
       (sum, e) => sum + calculateHours(e.start_time, e.end_time, e.break_minutes ?? 0),

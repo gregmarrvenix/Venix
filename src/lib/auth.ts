@@ -5,19 +5,37 @@ import type { AuthUser } from "./types";
 const JWKS_URI = `https://login.microsoftonline.com/${process.env.AZURE_TENANT_ID}/discovery/v2.0/keys`;
 const jwks = createRemoteJWKSet(new URL(JWKS_URI));
 
+// Server-side auth cache: token hash → { user, expires }
+const AUTH_CACHE_TTL = 2 * 60 * 1000; // 2 minutes
+const authCache = new Map<string, { user: AuthUser; expires: number }>();
+
+async function hashToken(token: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(token);
+  const hash = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(hash))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
 export async function validateToken(token: string): Promise<AuthUser> {
-  // Verify signature against Microsoft JWKS only
-  // Audience/issuer vary by Azure AD token version
-  const { payload } = await jwtVerify(token, jwks);
+  // Check cache first
+  const tokenHash = await hashToken(token);
+  const cached = authCache.get(tokenHash);
+  if (cached && cached.expires > Date.now()) {
+    return cached.user;
+  }
+
+  const { payload } = await jwtVerify(token, jwks, {
+    audience: process.env.AZURE_CLIENT_ID,
+    issuer: `https://login.microsoftonline.com/${process.env.AZURE_TENANT_ID}/v2.0`,
+  });
 
   const email = (payload.preferred_username || payload.email || payload.upn) as string;
   const oid = (payload.oid || payload.sub) as string;
-  const name = payload.name as string;
-
-  console.log("Token claims:", JSON.stringify({ iss: payload.iss, aud: payload.aud, email, oid, name, preferred_username: payload.preferred_username, upn: payload.upn }));
 
   if (!email || !oid) {
-    throw new Error(`Token missing required claims (email=${email}, oid=${oid})`);
+    throw new Error("Authentication failed");
   }
 
   // Look up contractor by email
@@ -28,11 +46,11 @@ export async function validateToken(token: string): Promise<AuthUser> {
     .single();
 
   if (error || !contractor) {
-    throw new Error("Access denied — not a registered contractor");
+    throw new Error("Authentication failed");
   }
 
   if (!contractor.is_active) {
-    throw new Error("Access denied — account is inactive");
+    throw new Error("Authentication failed");
   }
 
   // Link microsoft_oid on first login
@@ -43,12 +61,25 @@ export async function validateToken(token: string): Promise<AuthUser> {
       .eq("id", contractor.id);
   }
 
-  return {
+  const user: AuthUser = {
     contractor_id: contractor.id,
     email: contractor.email,
     display_name: contractor.display_name,
     microsoft_oid: oid,
   };
+
+  // Cache the result
+  authCache.set(tokenHash, { user, expires: Date.now() + AUTH_CACHE_TTL });
+
+  // Prune expired entries periodically
+  if (authCache.size > 100) {
+    const now = Date.now();
+    for (const [key, val] of authCache) {
+      if (val.expires <= now) authCache.delete(key);
+    }
+  }
+
+  return user;
 }
 
 export async function getAuthUser(

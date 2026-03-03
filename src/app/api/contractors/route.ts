@@ -16,7 +16,8 @@ export async function GET(request: Request) {
     .order("display_name");
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("DB error:", error.message);
+    return NextResponse.json({ error: "Operation failed" }, { status: 500 });
   }
 
   return NextResponse.json(data);
@@ -44,7 +45,8 @@ export async function POST(request: Request) {
     .single();
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("DB error:", error.message);
+    return NextResponse.json({ error: "Operation failed" }, { status: 500 });
   }
 
   return NextResponse.json(data, { status: 201 });

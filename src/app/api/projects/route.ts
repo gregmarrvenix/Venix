@@ -25,7 +25,8 @@ export async function GET(request: Request) {
   const { data, error } = await query;
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("DB error:", error.message);
+    return NextResponse.json({ error: "Operation failed" }, { status: 500 });
   }
 
   // Sort by customer name then project name
@@ -62,7 +63,8 @@ export async function POST(request: Request) {
     .single();
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("DB error:", error.message);
+    return NextResponse.json({ error: "Operation failed" }, { status: 500 });
   }
 
   return NextResponse.json(data, { status: 201 });

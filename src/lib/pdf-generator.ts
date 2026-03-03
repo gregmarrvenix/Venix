@@ -11,7 +11,7 @@ interface PdfOptions {
   logoPng?: string; // base64 data URI
 }
 
-export function generateTimeReport(options: PdfOptions): Uint8Array {
+export function generateTimeReport(options: PdfOptions): ArrayBuffer {
   const { customerName, periodLabel, entries, groupByProject, logoPng } =
     options;
   const doc = new jsPDF();
@@ -231,5 +231,5 @@ export function generateTimeReport(options: PdfOptions): Uint8Array {
     doc.text(`Total: ${total.toFixed(2)} hours`, 14, finalY);
   }
 
-  return doc.output("arraybuffer") as unknown as Uint8Array;
+  return doc.output("arraybuffer");
 }

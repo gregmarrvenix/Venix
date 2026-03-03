@@ -27,5 +27,10 @@ export function formatTime(timeStr: string): string {
 export function calculateHours(startTime: string, endTime: string, breakMinutes = 0): number {
   const [sh, sm] = startTime.split(":").map(Number);
   const [eh, em] = endTime.split(":").map(Number);
-  return (eh * 60 + em - (sh * 60 + sm) - breakMinutes) / 60;
+  let totalMinutes = eh * 60 + em - (sh * 60 + sm);
+  // Handle cross-midnight entries (e.g., 22:00 → 02:00)
+  if (totalMinutes < 0) totalMinutes += 24 * 60;
+  // Ensure break doesn't exceed total duration
+  const netMinutes = Math.max(0, totalMinutes - breakMinutes);
+  return netMinutes / 60;
 }

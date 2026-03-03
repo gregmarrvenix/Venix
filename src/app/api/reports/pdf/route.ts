@@ -67,7 +67,8 @@ export async function POST(request: Request) {
     .gte("entry_date", body.from)
     .lte("entry_date", body.to)
     .order("entry_date")
-    .order("start_time");
+    .order("start_time")
+    .limit(2000);
 
   if (!isAllCustomers) {
     query = query.eq("customer_id", body.customer_id);
@@ -76,8 +77,9 @@ export async function POST(request: Request) {
   const { data: entries, error: entriesError } = await query;
 
   if (entriesError) {
+    console.error("DB error:", entriesError.message);
     return NextResponse.json(
-      { error: entriesError.message },
+      { error: "Operation failed" },
       { status: 500 }
     );
   }

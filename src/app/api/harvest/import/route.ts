@@ -8,11 +8,9 @@ const BATCH_SIZE = 500;
 export async function POST(request: Request) {
   try {
     await getAuthUser(request);
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown auth error";
-    console.error("Harvest import auth failed:", message);
+  } catch {
     return NextResponse.json(
-      { error: `Auth failed: ${message}` },
+      { error: "Unauthorized" },
       { status: 401 }
     );
   }
@@ -67,7 +65,8 @@ export async function POST(request: Request) {
     );
 
     if (error) {
-      errors.push(`Batch ${Math.floor(i / BATCH_SIZE) + 1}: ${error.message}`);
+      console.error("DB error:", error.message);
+      errors.push(`Batch ${Math.floor(i / BATCH_SIZE) + 1} failed`);
     } else {
       imported += batch.length;
     }

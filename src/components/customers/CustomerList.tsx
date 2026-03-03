@@ -9,7 +9,7 @@ import { CustomerForm } from "./CustomerForm";
 import type { Customer } from "@/lib/types";
 
 export function CustomerList() {
-  const { customers, loading, create, update, remove } = useCustomers();
+  const { customers, loading, create, update, remove, refresh } = useCustomers({ includeInactive: true });
   const toast = useToast();
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [showCreate, setShowCreate] = useState(false);
@@ -33,8 +33,19 @@ export function CustomerList() {
       await remove(id);
       setConfirmDelete(null);
       toast.success("Customer deactivated");
+      refresh();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to deactivate");
+    }
+  }
+
+  async function handleReactivate(id: string) {
+    try {
+      await update(id, { is_active: true });
+      toast.success("Customer reactivated");
+      refresh();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to reactivate");
     }
   }
 
@@ -81,9 +92,13 @@ export function CustomerList() {
                     <Button variant="ghost" size="sm" onClick={() => setEditingCustomer(c)}>
                       Edit
                     </Button>
-                    {c.is_active && (
+                    {c.is_active ? (
                       <Button variant="ghost" size="sm" onClick={() => setConfirmDelete(c.id)} className="text-red-400 hover:text-red-300">
                         Deactivate
+                      </Button>
+                    ) : (
+                      <Button variant="ghost" size="sm" onClick={() => handleReactivate(c.id)} className="text-green-400 hover:text-green-300">
+                        Reactivate
                       </Button>
                     )}
                   </div>
@@ -108,9 +123,13 @@ export function CustomerList() {
               <Button variant="ghost" size="sm" onClick={() => setEditingCustomer(c)}>
                 Edit
               </Button>
-              {c.is_active && (
+              {c.is_active ? (
                 <Button variant="ghost" size="sm" onClick={() => setConfirmDelete(c.id)} className="text-red-400">
                   Deactivate
+                </Button>
+              ) : (
+                <Button variant="ghost" size="sm" onClick={() => handleReactivate(c.id)} className="text-green-400">
+                  Reactivate
                 </Button>
               )}
             </div>

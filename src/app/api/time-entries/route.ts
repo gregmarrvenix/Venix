@@ -16,6 +16,8 @@ export async function GET(request: Request) {
   const customerId = searchParams.get("customer_id");
   const from = searchParams.get("from");
   const to = searchParams.get("to");
+  const limitParam = parseInt(searchParams.get("limit") ?? "50", 10);
+  const limit = Math.min(Math.max(limitParam, 1), 200);
 
   let query = supabase
     .from("time_entries")
@@ -24,7 +26,7 @@ export async function GET(request: Request) {
     )
     .order("entry_date", { ascending: false })
     .order("start_time", { ascending: false })
-    .limit(100);
+    .limit(limit);
 
   if (contractorId) {
     query = query.eq("contractor_id", contractorId);
@@ -42,7 +44,8 @@ export async function GET(request: Request) {
   const { data, error } = await query;
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("DB error:", error.message);
+    return NextResponse.json({ error: "Operation failed" }, { status: 500 });
   }
 
   return NextResponse.json(data);
@@ -76,7 +79,7 @@ export async function POST(request: Request) {
   const { data, error } = await supabase
     .from("time_entries")
     .insert({
-      contractor_id: body.contractor_id || user.contractor_id,
+      contractor_id: user.contractor_id,
       customer_id: body.customer_id,
       project_id: body.project_id,
       entry_date: body.entry_date,
@@ -89,7 +92,8 @@ export async function POST(request: Request) {
     .single();
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("DB error:", error.message);
+    return NextResponse.json({ error: "Operation failed" }, { status: 500 });
   }
 
   return NextResponse.json(data, { status: 201 });

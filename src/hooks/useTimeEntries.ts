@@ -4,17 +4,30 @@ import { useState, useEffect, useCallback } from "react";
 import { apiFetch } from "@/lib/api-client";
 import type { TimeEntry } from "@/lib/types";
 
-export function useTimeEntries(contractorId: string, from: string, to: string) {
+interface UseTimeEntriesOptions {
+  contractorId: string;
+  from?: string;
+  to?: string;
+  limit?: number;
+  customerId?: string;
+}
+
+export function useTimeEntries({ contractorId, from, to, limit = 50, customerId }: UseTimeEntriesOptions) {
   const [entries, setEntries] = useState<TimeEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchEntries = useCallback(async () => {
-    if (!from || !to) return;
     setLoading(true);
     try {
-      const params = new URLSearchParams({ from, to });
+      const params = new URLSearchParams();
+      if (from) params.set("from", from);
+      if (to) params.set("to", to);
+      params.set("limit", String(limit));
       if (contractorId) {
         params.set("contractor_id", contractorId);
+      }
+      if (customerId) {
+        params.set("customer_id", customerId);
       }
       const data = await apiFetch<TimeEntry[]>(`/api/time-entries?${params}`);
       setEntries(data);
@@ -23,7 +36,7 @@ export function useTimeEntries(contractorId: string, from: string, to: string) {
     } finally {
       setLoading(false);
     }
-  }, [contractorId, from, to]);
+  }, [contractorId, from, to, limit, customerId]);
 
   useEffect(() => {
     fetchEntries();

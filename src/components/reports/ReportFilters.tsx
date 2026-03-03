@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useCallback } from "react";
 import { useCustomers } from "@/hooks/useCustomers";
 import { nowAEST } from "@/lib/timezone";
 import { Select } from "@/components/ui/Select";
@@ -20,12 +20,19 @@ interface ReportFiltersProps {
   onGenerate: (filters: ReportFilterValues) => void;
 }
 
+function padDate(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 function getMonthRange(monthsBack: number): { from: string; to: string; label: string } {
   const now = nowAEST();
   const target = new Date(now.getFullYear(), now.getMonth() - monthsBack, 1);
   const end = new Date(target.getFullYear(), target.getMonth() + 1, 0);
-  const from = target.toISOString().split("T")[0];
-  const to = end.toISOString().split("T")[0];
+  const from = padDate(target);
+  const to = padDate(end);
   const label = target.toLocaleString("en-AU", { month: "long", year: "numeric" });
   return { from, to, label };
 }
@@ -44,6 +51,7 @@ export function ReportFilters({ onGenerate }: ReportFiltersProps) {
   const [customTo, setCustomTo] = useState("");
   const [groupByProject, setGroupByProject] = useState(false);
   const [error, setError] = useState("");
+  const hasGenerated = useRef(false);
 
   const periodOptions = useMemo(() => {
     const options = [];
@@ -58,7 +66,7 @@ export function ReportFilters({ onGenerate }: ReportFiltersProps) {
     return options;
   }, []);
 
-  function handleGenerate() {
+  const submitFilters = useCallback((overrideGroupByProject?: boolean) => {
     if (!customerId) {
       setError("Please select a customer");
       return;
@@ -88,14 +96,19 @@ export function ReportFilters({ onGenerate }: ReportFiltersProps) {
 
     const customer = isAllCustomers ? null : customers.find((c) => c.id === customerId);
     setError("");
+    hasGenerated.current = true;
     onGenerate({
       customer_id: customerId,
       customerName: isAllCustomers ? "All Customers" : (customer?.name ?? ""),
       from,
       to,
-      group_by_project: groupByProject,
+      group_by_project: overrideGroupByProject ?? groupByProject,
       periodLabel,
     });
+  }, [customerId, period, customFrom, customTo, groupByProject, customers, onGenerate]);
+
+  function handleGenerate() {
+    submitFilters();
   }
 
   const customerOptions = [
@@ -142,7 +155,13 @@ export function ReportFilters({ onGenerate }: ReportFiltersProps) {
         <input
           type="checkbox"
           checked={groupByProject}
-          onChange={(e) => setGroupByProject(e.target.checked)}
+          onChange={(e) => {
+            const newValue = e.target.checked;
+            setGroupByProject(newValue);
+            if (hasGenerated.current) {
+              submitFilters(newValue);
+            }
+          }}
           className="rounded border-slate-600 bg-slate-800 text-indigo-500 focus:ring-indigo-500"
         />
         Group by project

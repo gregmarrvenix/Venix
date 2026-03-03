@@ -25,7 +25,8 @@ export async function POST(request: Request) {
     .gte("entry_date", body.from)
     .lte("entry_date", body.to)
     .order("entry_date", { ascending: false })
-    .order("start_time", { ascending: false });
+    .order("start_time", { ascending: false })
+    .limit(2000);
 
   if (!isAllCustomers) {
     query = query.eq("customer_id", body.customer_id);
@@ -34,7 +35,8 @@ export async function POST(request: Request) {
   const { data: entries, error } = await query;
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("DB error:", error.message);
+    return NextResponse.json({ error: "Operation failed" }, { status: 500 });
   }
 
   return NextResponse.json({ entries: entries ?? [] });

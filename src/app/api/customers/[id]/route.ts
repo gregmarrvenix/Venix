@@ -15,19 +15,24 @@ export async function PUT(
   const { id } = await params;
   const body = await request.json();
 
-  if (!body.name) {
-    return NextResponse.json({ error: "Name is required" }, { status: 400 });
+  if (!body.name && body.is_active === undefined) {
+    return NextResponse.json({ error: "Name or is_active is required" }, { status: 400 });
   }
+
+  const updateData: Record<string, unknown> = { updated_at: new Date().toISOString() };
+  if (body.name) updateData.name = body.name;
+  if (body.is_active !== undefined) updateData.is_active = body.is_active;
 
   const { data, error } = await supabase
     .from("customers")
-    .update({ name: body.name, updated_at: new Date().toISOString() })
+    .update(updateData)
     .eq("id", id)
     .select()
     .single();
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 404 });
+    console.error("DB error:", error.message);
+    return NextResponse.json({ error: "Operation failed" }, { status: 404 });
   }
 
   return NextResponse.json(data);
@@ -51,7 +56,8 @@ export async function DELETE(
     .eq("id", id);
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("DB error:", error.message);
+    return NextResponse.json({ error: "Operation failed" }, { status: 500 });
   }
 
   return NextResponse.json({ success: true });

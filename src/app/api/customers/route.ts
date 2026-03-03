@@ -9,14 +9,19 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { data, error } = await supabase
-    .from("customers")
-    .select("*")
-    .eq("is_active", true)
-    .order("name");
+  const { searchParams } = new URL(request.url);
+  const includeInactive = searchParams.get("include_inactive") === "true";
+
+  let query = supabase.from("customers").select("*").order("name");
+  if (!includeInactive) {
+    query = query.eq("is_active", true);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("DB error:", error.message);
+    return NextResponse.json({ error: "Operation failed" }, { status: 500 });
   }
 
   return NextResponse.json(data);
@@ -41,7 +46,8 @@ export async function POST(request: Request) {
     .single();
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("DB error:", error.message);
+    return NextResponse.json({ error: "Operation failed" }, { status: 500 });
   }
 
   // Auto-create default "Ad-Hoc IT Support" project for new customer

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useId } from "react";
 
 interface DatePickerProps {
   label?: string;
@@ -19,6 +19,7 @@ export function DatePicker({ label, value, onChange, error }: DatePickerProps) {
   });
   const [view, setView] = useState<View>("days");
   const ref = useRef<HTMLDivElement>(null);
+  const buttonId = useId();
 
   useEffect(() => {
     if (!isOpen) return;
@@ -84,8 +85,9 @@ export function DatePicker({ label, value, onChange, error }: DatePickerProps) {
 
   return (
     <div ref={ref} className="relative flex flex-col gap-1">
-      {label && <label className="text-sm text-slate-400">{label}</label>}
+      {label && <label htmlFor={buttonId} className="text-sm text-slate-400">{label}</label>}
       <button
+        id={buttonId}
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         className={`flex w-full items-center rounded-lg border bg-slate-900 px-3 py-2 text-left text-sm text-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus:outline-none ${

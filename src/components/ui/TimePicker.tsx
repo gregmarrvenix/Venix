@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useId } from "react";
 import { nowAEST } from "@/lib/timezone";
 
 interface TimePickerProps {
@@ -47,6 +47,7 @@ export function TimePicker({ label, value, onChange, error }: TimePickerProps) {
   const ref = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const skipSync = useRef(false);
+  const buttonId = useId();
 
   // Sync from external value changes
   useEffect(() => {
@@ -115,10 +116,11 @@ export function TimePicker({ label, value, onChange, error }: TimePickerProps) {
 
   return (
     <div ref={ref} className="relative flex flex-col gap-1">
-      {label && <label className="text-sm text-slate-400">{label}</label>}
+      {label && <label htmlFor={buttonId} className="text-sm text-slate-400">{label}</label>}
 
       {/* Main display button — click to open dropdown */}
       <button
+        id={buttonId}
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         className={`flex w-full items-center rounded-lg border bg-slate-900 px-3 py-2 text-left text-sm text-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus:outline-none ${

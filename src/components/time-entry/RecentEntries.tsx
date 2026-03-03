@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useTimeEntries } from "@/hooks/useTimeEntries";
 import { useContractors } from "@/hooks/useContractors";
+import { useCustomers } from "@/hooks/useCustomers";
 import { useAuthContext } from "@/components/auth/AuthGuard";
-import { todayAEST, formatDate, formatTime, calculateHours } from "@/lib/timezone";
+import { formatDate, formatTime, calculateHours } from "@/lib/timezone";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
@@ -19,22 +20,17 @@ interface RecentEntriesProps {
 export function RecentEntries({ refreshKey }: RecentEntriesProps) {
   const { contractorId } = useAuthContext();
   const { contractors, loading: contractorsLoading } = useContractors();
+  const { customers, loading: customersLoading } = useCustomers();
   const toast = useToast();
   const [filterContractorId, setFilterContractorId] = useState(contractorId);
+  const [filterCustomerId, setFilterCustomerId] = useState("");
+  const [pageSize, setPageSize] = useState("50");
 
-  const dateRange = useMemo(() => {
-    const today = todayAEST();
-    const from = new Date(today);
-    from.setDate(from.getDate() - 7);
-    const fromStr = from.toISOString().split("T")[0];
-    return { from: fromStr, to: today };
-  }, []);
-
-  const { entries, loading, update, remove, refresh } = useTimeEntries(
-    filterContractorId,
-    dateRange.from,
-    dateRange.to
-  );
+  const { entries, loading, update, remove, refresh } = useTimeEntries({
+    contractorId: filterContractorId,
+    limit: parseInt(pageSize, 10),
+    customerId: filterCustomerId || undefined,
+  });
 
   useEffect(() => {
     if (refreshKey && refreshKey > 0) refresh();
@@ -79,9 +75,20 @@ export function RecentEntries({ refreshKey }: RecentEntriesProps) {
     ...contractors.map((c) => ({ value: c.id, label: c.display_name })),
   ];
 
+  const customerOptions = [
+    { value: "", label: "All Customers" },
+    ...customers.map((c) => ({ value: c.id, label: c.name })),
+  ];
+
+  const pageSizeOptions = [
+    { value: "50", label: "50 entries" },
+    { value: "100", label: "100 entries" },
+    { value: "200", label: "200 entries" },
+  ];
+
   return (
     <>
-      <div className="mb-4">
+      <div className="mb-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
         <Select
           label="Contractor"
           value={filterContractorId}
@@ -90,6 +97,21 @@ export function RecentEntries({ refreshKey }: RecentEntriesProps) {
             ...(contractorsLoading ? [{ value: "", label: "Loading..." }] : []),
             ...contractorOptions,
           ]}
+        />
+        <Select
+          label="Customer"
+          value={filterCustomerId}
+          onChange={(e) => setFilterCustomerId(e.target.value)}
+          options={[
+            ...(customersLoading ? [{ value: "", label: "Loading..." }] : []),
+            ...customerOptions,
+          ]}
+        />
+        <Select
+          label="Show"
+          value={pageSize}
+          onChange={(e) => setPageSize(e.target.value)}
+          options={pageSizeOptions}
         />
       </div>
 
