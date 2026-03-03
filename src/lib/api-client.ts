@@ -12,16 +12,28 @@ export async function getAccessToken(): Promise<string> {
   const accounts = msalInstance.getAllAccounts();
   if (accounts.length === 0) throw new Error("No authenticated user");
 
+  // Try silent acquisition first
   try {
     const response = await msalInstance.acquireTokenSilent({
       ...loginRequest,
       account: accounts[0],
     });
-    return response.idToken || response.accessToken;
+    const token = response.idToken || response.accessToken;
+    if (token) return token;
   } catch {
-    const response = await msalInstance.acquireTokenPopup(loginRequest);
-    return response.idToken || response.accessToken;
+    // Silent failed, will try popup below
   }
+
+  // Force interactive login to get a fresh token
+  const response = await msalInstance.acquireTokenPopup({
+    ...loginRequest,
+    account: accounts[0],
+  });
+  const token = response.idToken || response.accessToken;
+  if (!token) {
+    throw new Error("MSAL returned no token (idToken and accessToken both empty)");
+  }
+  return token;
 }
 
 export async function apiFetch<T>(
