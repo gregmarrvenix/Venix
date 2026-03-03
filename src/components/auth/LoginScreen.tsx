@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { useMsal } from "@azure/msal-react";
 import { loginRequest } from "@/lib/msal-config";
 
@@ -19,16 +20,21 @@ export default function LoginScreen() {
 
   return (
     <div className="flex h-screen flex-col items-center justify-center bg-slate-900 text-slate-200">
-      <h1 className="bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-4xl font-bold text-transparent">
-        Venix Time Tracker
-      </h1>
-      <p className="mt-3 text-slate-400">
+      <Image
+        src="/logo.webp"
+        alt="Venix IT Services"
+        width={170}
+        height={100}
+        style={{ filter: "brightness(0) saturate(100%)" }}
+        priority
+      />
+      <p className="mt-4 text-sm text-slate-400">
         Sign in with your organization account to start tracking time.
       </p>
 
       <button
         onClick={handleLogin}
-        className="mt-8 flex items-center gap-3 rounded-lg bg-white px-6 py-3 font-medium text-slate-900 transition hover:bg-slate-100"
+        className="mt-8 flex items-center gap-3 rounded-lg bg-indigo-500 px-6 py-3 font-medium text-white transition hover:bg-indigo-600"
       >
         <MicrosoftLogo />
         Sign in with Microsoft

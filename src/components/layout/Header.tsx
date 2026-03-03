@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useMsal } from "@azure/msal-react";
 import { useAuthContext } from "@/components/auth/AuthGuard";
@@ -20,14 +21,19 @@ export default function Header() {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 flex h-14 items-center justify-between border-b border-slate-700 bg-slate-800 px-4 shadow-sm">
-      <div className="flex items-center gap-3">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500 text-sm font-bold text-white">
-          V
-        </div>
+      <Link href="/" className="flex items-center gap-2">
+        <Image
+          src="/logo.webp"
+          alt="Venix IT Services"
+          width={55}
+          height={32}
+          style={{ filter: "brightness(0) saturate(100%)" }}
+          priority
+        />
         <span className="text-sm font-semibold text-slate-200">
-          Venix Time Tracker
+          Time Tracker
         </span>
-      </div>
+      </Link>
 
       <nav className="hidden items-center gap-1 md:flex">
         {navLinks.map((link) => {

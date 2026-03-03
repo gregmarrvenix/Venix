@@ -1,7 +1,27 @@
 import { NextResponse } from "next/server";
+import path from "path";
+import fs from "fs";
 import { getAuthUser } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 import { generateTimeReport } from "@/lib/pdf-generator";
+
+let cachedLogoPng: string | null = null;
+
+async function getLogoPng(): Promise<string | undefined> {
+  if (cachedLogoPng) return cachedLogoPng;
+
+  try {
+    const sharp = (await import("sharp")).default;
+    const logoPath = path.join(process.cwd(), "public", "logo.webp");
+    if (!fs.existsSync(logoPath)) return undefined;
+
+    const pngBuffer = await sharp(logoPath).png().toBuffer();
+    cachedLogoPng = `data:image/png;base64,${pngBuffer.toString("base64")}`;
+    return cachedLogoPng;
+  } catch {
+    return undefined;
+  }
+}
 
 export async function POST(request: Request) {
   try {
@@ -26,15 +46,16 @@ export async function POST(request: Request) {
     .single();
 
   if (customerError || !customer) {
-    return NextResponse.json({ error: "Customer not found" }, { status: 404 });
+    return NextResponse.json(
+      { error: "Customer not found" },
+      { status: 404 }
+    );
   }
 
   // Query time entries for the customer within date range
   const { data: entries, error: entriesError } = await supabase
     .from("time_entries")
-    .select(
-      "*, contractor:contractors(*), project:projects(*)"
-    )
+    .select("*, contractor:contractors(*), project:projects(*)")
     .eq("customer_id", body.customer_id)
     .gte("entry_date", body.from)
     .lte("entry_date", body.to)
@@ -48,11 +69,14 @@ export async function POST(request: Request) {
     );
   }
 
+  const logoPng = await getLogoPng();
+
   const pdfBytes = generateTimeReport({
     customerName: customer.name,
     periodLabel: `${body.from} — ${body.to}`,
     entries: entries ?? [],
     groupByProject: body.group_by_project ?? false,
+    logoPng,
   });
 
   return new Response(Buffer.from(pdfBytes), {
