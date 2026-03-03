@@ -60,13 +60,12 @@ export async function POST(request: Request) {
     !body.customer_id ||
     !body.project_id ||
     !body.expense_date ||
-    !body.amount ||
-    !body.category
+    !body.amount
   ) {
     return NextResponse.json(
       {
         error:
-          "customer_id, project_id, expense_date, amount, and category are required",
+          "customer_id, project_id, expense_date, and amount are required",
       },
       { status: 400 }
     );
@@ -80,7 +79,6 @@ export async function POST(request: Request) {
       project_id: body.project_id,
       expense_date: body.expense_date,
       amount: body.amount,
-      category: body.category,
       description: body.description ?? "",
       is_billable: body.is_billable ?? true,
     })

@@ -11,16 +11,6 @@ import { DatePicker } from "@/components/ui/DatePicker";
 import { ProjectPicker } from "@/components/ui/ProjectPicker";
 import type { Expense } from "@/lib/types";
 
-const EXPENSE_CATEGORIES = [
-  { value: "Travel", label: "Travel" },
-  { value: "Materials", label: "Materials" },
-  { value: "Equipment", label: "Equipment" },
-  { value: "Software", label: "Software" },
-  { value: "Accommodation", label: "Accommodation" },
-  { value: "Meals", label: "Meals" },
-  { value: "Other", label: "Other" },
-];
-
 interface ExpenseFormProps {
   onSubmit: (data: {
     contractor_id: string;
@@ -28,7 +18,6 @@ interface ExpenseFormProps {
     project_id: string;
     expense_date: string;
     amount: number;
-    category: string;
     description: string;
     is_billable: boolean;
   }) => Promise<void>;
@@ -45,7 +34,6 @@ export function ExpenseForm({ onSubmit, initialData }: ExpenseFormProps) {
   );
   const [projectId, setProjectId] = useState(initialData?.project_id ?? "");
   const [date, setDate] = useState(initialData?.expense_date ?? todayAEST());
-  const [category, setCategory] = useState(initialData?.category ?? "");
   const [amount, setAmount] = useState(
     initialData?.amount?.toString() ?? ""
   );
@@ -65,7 +53,6 @@ export function ExpenseForm({ onSubmit, initialData }: ExpenseFormProps) {
     if (!customerId) errs.customerId = "Customer is required";
     if (!projectId) errs.projectId = "Project is required";
     if (!date) errs.date = "Date is required";
-    if (!category) errs.category = "Category is required";
     if (!amount || parseFloat(amount) <= 0)
       errs.amount = "Amount must be greater than 0";
     return errs;
@@ -85,7 +72,6 @@ export function ExpenseForm({ onSubmit, initialData }: ExpenseFormProps) {
         project_id: projectId,
         expense_date: date,
         amount: parseFloat(parseFloat(amount).toFixed(2)),
-        category,
         description: description.trim(),
         is_billable: isBillable,
       });
@@ -128,17 +114,6 @@ export function ExpenseForm({ onSubmit, initialData }: ExpenseFormProps) {
         value={date}
         onChange={setDate}
         error={errors.date}
-      />
-
-      <Select
-        label="Category"
-        value={category}
-        onChange={(e) => setCategory(e.target.value)}
-        options={[
-          { value: "", label: "Select category" },
-          ...EXPENSE_CATEGORIES,
-        ]}
-        error={errors.category}
       />
 
       <Input

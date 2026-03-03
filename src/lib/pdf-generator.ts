@@ -1,7 +1,7 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { formatDate, formatTime, calculateHours } from "./timezone";
-import type { TimeEntry } from "./types";
+import type { TimeEntry, Expense } from "./types";
 
 interface PdfOptions {
   customerName: string;
@@ -229,6 +229,189 @@ export function generateTimeReport(options: PdfOptions): ArrayBuffer {
     doc.setFontSize(12);
     doc.setFont("helvetica", "bold");
     doc.text(`Total: ${total.toFixed(2)} hours`, 14, finalY);
+  }
+
+  return doc.output("arraybuffer");
+}
+
+interface ExpensePdfOptions {
+  customerName: string;
+  periodLabel: string;
+  expenses: Expense[];
+  groupByProject: boolean;
+  logoPng?: string;
+}
+
+export function generateExpenseReport(options: ExpensePdfOptions): ArrayBuffer {
+  const { customerName, periodLabel, expenses, groupByProject, logoPng } =
+    options;
+  const doc = new jsPDF();
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const isAllCustomers = customerName === "All Customers";
+
+  // Dark header bar
+  doc.setFillColor(30, 41, 59);
+  doc.rect(0, 0, pageWidth, 36, "F");
+
+  // Logo in header
+  if (logoPng) {
+    doc.addImage(logoPng, "PNG", 14, 6, 29, 17);
+  }
+
+  // Title text in header bar
+  doc.setFontSize(16);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(255, 255, 255);
+  const titleX = logoPng ? 48 : 14;
+  doc.text("Expense Summary", titleX, 18);
+
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(200, 200, 210);
+  doc.text(`Generated ${new Date().toLocaleDateString("en-AU")}`, titleX, 26);
+
+  // Reset text color
+  doc.setTextColor(31, 41, 55);
+
+  // Customer / period info
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "bold");
+  doc.text(`Customer: ${customerName}`, 14, 46);
+  doc.setFont("helvetica", "normal");
+  doc.text(`Period: ${periodLabel}`, 14, 53);
+
+  let yPos = 61;
+
+  const sorted = [...expenses].sort((a, b) =>
+    b.expense_date.localeCompare(a.expense_date)
+  );
+
+  const headRow = ["Date", "Project", "Amount", "Billable", "Contractor", "Description"];
+  const colStyles = {
+    0: { cellWidth: 22 },
+    1: { cellWidth: 28 },
+    2: { cellWidth: 20 },
+    3: { cellWidth: 16 },
+    4: { cellWidth: 28 },
+    5: { cellWidth: "auto" as const },
+  };
+
+  function expenseRow(e: Expense) {
+    return [
+      formatDate(e.expense_date),
+      e.project?.name || "",
+      `$${Number(e.amount).toFixed(2)}`,
+      e.is_billable ? "Yes" : "No",
+      e.contractor?.display_name || "",
+      e.description || "",
+    ];
+  }
+
+  if (isAllCustomers) {
+    const customerGroups = new Map<string, Expense[]>();
+    for (const expense of sorted) {
+      const name = expense.customer?.name || "Unknown";
+      if (!customerGroups.has(name)) customerGroups.set(name, []);
+      customerGroups.get(name)!.push(expense);
+    }
+
+    let grandTotal = 0;
+
+    for (const [custName, custExpenses] of customerGroups) {
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(79, 70, 229);
+      doc.text(custName, 14, yPos);
+      doc.setTextColor(31, 41, 55);
+      yPos += 4;
+
+      autoTable(doc, {
+        startY: yPos,
+        head: [headRow],
+        body: custExpenses.map(expenseRow),
+        theme: "grid",
+        headStyles: { fillColor: [99, 102, 241] },
+        styles: { fontSize: 8 },
+        columnStyles: colStyles,
+      });
+
+      const subtotal = custExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
+      grandTotal += subtotal;
+
+      yPos =
+        (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable
+          .finalY + 4;
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "bold");
+      doc.text(`Subtotal: $${subtotal.toFixed(2)}`, 14, yPos);
+      yPos += 10;
+    }
+
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.text(`Total: $${grandTotal.toFixed(2)}`, 14, yPos);
+  } else if (groupByProject) {
+    const grouped = new Map<string, Expense[]>();
+    for (const expense of sorted) {
+      const projectName = expense.project?.name || "No Project";
+      if (!grouped.has(projectName)) grouped.set(projectName, []);
+      grouped.get(projectName)!.push(expense);
+    }
+
+    let grandTotal = 0;
+
+    for (const [projectName, projectExpenses] of grouped) {
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(79, 70, 229);
+      doc.text(projectName, 14, yPos);
+      doc.setTextColor(31, 41, 55);
+      yPos += 4;
+
+      autoTable(doc, {
+        startY: yPos,
+        head: [headRow],
+        body: projectExpenses.map(expenseRow),
+        theme: "grid",
+        headStyles: { fillColor: [99, 102, 241] },
+        styles: { fontSize: 8 },
+        columnStyles: colStyles,
+      });
+
+      const subtotal = projectExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
+      grandTotal += subtotal;
+
+      yPos =
+        (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable
+          .finalY + 4;
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "bold");
+      doc.text(`Subtotal: $${subtotal.toFixed(2)}`, 14, yPos);
+      yPos += 10;
+    }
+
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.text(`Total: $${grandTotal.toFixed(2)}`, 14, yPos);
+  } else {
+    autoTable(doc, {
+      startY: yPos,
+      head: [headRow],
+      body: sorted.map(expenseRow),
+      theme: "grid",
+      headStyles: { fillColor: [99, 102, 241] },
+      styles: { fontSize: 8 },
+      columnStyles: colStyles,
+    });
+
+    const total = sorted.reduce((sum, e) => sum + Number(e.amount), 0);
+
+    const finalY =
+      (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable
+        .finalY + 8;
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.text(`Total: $${total.toFixed(2)}`, 14, finalY);
   }
 
   return doc.output("arraybuffer");

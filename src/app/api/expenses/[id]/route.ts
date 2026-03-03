@@ -21,7 +21,6 @@ export async function PUT(
     "project_id",
     "expense_date",
     "amount",
-    "category",
     "description",
     "is_billable",
   ];

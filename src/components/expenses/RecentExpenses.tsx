@@ -45,7 +45,6 @@ export function RecentExpenses({ refreshKey }: RecentExpensesProps) {
     project_id: string;
     expense_date: string;
     amount: number;
-    category: string;
     description: string;
     is_billable: boolean;
   }) {
@@ -104,9 +103,6 @@ export function RecentExpenses({ refreshKey }: RecentExpensesProps) {
                   <span>{formatDate(expense.expense_date)}</span>
                   <span className="text-indigo-400 font-medium">
                     ${Number(expense.amount).toFixed(2)}
-                  </span>
-                  <span className="rounded-full bg-slate-700 px-2 py-0.5 text-xs text-slate-300">
-                    {expense.category}
                   </span>
                   {expense.is_billable && (
                     <span className="rounded-full bg-indigo-500/20 px-2 py-0.5 text-xs text-indigo-300">

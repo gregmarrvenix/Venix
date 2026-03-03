@@ -50,7 +50,6 @@ export interface Expense {
   project_id: string;
   expense_date: string;
   amount: number;
-  category: string;
   description: string;
   is_billable: boolean;
   created_at: string;
