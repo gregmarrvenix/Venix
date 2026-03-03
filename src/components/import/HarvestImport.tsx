@@ -95,12 +95,46 @@ export function HarvestImport() {
     return Array.from(map, ([id, name]) => ({ id, name }));
   }, [entries]);
 
-  // Auto-match helper (case-insensitive)
+  // Fuzzy matching helpers
+  function fuzzyScore(a: string, b: string): number {
+    const la = a.toLowerCase().trim();
+    const lb = b.toLowerCase().trim();
+    if (la === lb) return 1;
+    if (la.includes(lb) || lb.includes(la)) return 0.8;
+
+    // Token overlap: split by spaces, hyphens, underscores
+    const tokensA = la.split(/[\s\-_/]+/).filter(Boolean);
+    const tokensB = lb.split(/[\s\-_/]+/).filter(Boolean);
+    const setA = new Set(tokensA);
+    const common = tokensB.filter((t) => setA.has(t)).length;
+    const tokenScore = common / Math.max(tokensA.length, tokensB.length);
+    if (tokenScore > 0) return 0.3 + tokenScore * 0.5;
+
+    // Partial token matching (check if any token from A starts with / ends with tokens from B)
+    let partialMatches = 0;
+    for (const ta of tokensA) {
+      for (const tb of tokensB) {
+        if (ta.startsWith(tb) || tb.startsWith(ta) || ta.endsWith(tb) || tb.endsWith(ta)) {
+          partialMatches++;
+          break;
+        }
+      }
+    }
+    const partialScore = partialMatches / Math.max(tokensA.length, tokensB.length);
+    return partialScore * 0.4;
+  }
+
   function autoMatchCustomer(harvestName: string): string | null {
-    const match = customers.find(
-      (c) => c.name.toLowerCase() === harvestName.toLowerCase()
-    );
-    return match ? match.id : null;
+    let bestId: string | null = null;
+    let bestScore = 0;
+    for (const c of customers) {
+      const score = fuzzyScore(harvestName, c.name);
+      if (score > bestScore) {
+        bestScore = score;
+        bestId = c.id;
+      }
+    }
+    return bestScore >= 0.4 ? bestId : null;
   }
 
   function autoMatchProject(
@@ -108,21 +142,31 @@ export function HarvestImport() {
     venixCustomerId: string | null
   ): string | null {
     if (!venixCustomerId) return null;
-    const match = projects.find(
-      (p) =>
-        p.name.toLowerCase() === harvestName.toLowerCase() &&
-        p.customer_id === venixCustomerId
-    );
-    return match ? match.id : null;
+    const customerProjects = projects.filter((p) => p.customer_id === venixCustomerId);
+    let bestId: string | null = null;
+    let bestScore = 0;
+    for (const p of customerProjects) {
+      const score = fuzzyScore(harvestName, p.name);
+      if (score > bestScore) {
+        bestScore = score;
+        bestId = p.id;
+      }
+    }
+    return bestScore >= 0.4 ? bestId : null;
   }
 
   function autoMatchContractor(harvestName: string): string {
-    const match = contractors.find(
-      (c) =>
-        c.is_active &&
-        c.display_name.toLowerCase() === harvestName.toLowerCase()
-    );
-    return match ? match.id : contractorId;
+    let bestId: string | null = null;
+    let bestScore = 0;
+    for (const c of contractors) {
+      if (!c.is_active) continue;
+      const score = fuzzyScore(harvestName, c.display_name);
+      if (score > bestScore) {
+        bestScore = score;
+        bestId = c.id;
+      }
+    }
+    return bestScore >= 0.4 && bestId ? bestId : contractorId;
   }
 
   // Step 1 → 2: Fetch entries

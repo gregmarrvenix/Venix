@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useCustomers } from "@/hooks/useCustomers";
 import { nowAEST } from "@/lib/timezone";
 import { Select } from "@/components/ui/Select";
@@ -20,8 +20,6 @@ interface ReportFiltersProps {
   onGenerate: (filters: ReportFilterValues) => void;
 }
 
-type Period = "this_month" | "last_month" | "prior_month" | "two_months_prior" | "custom";
-
 function getMonthRange(monthsBack: number): { from: string; to: string; label: string } {
   const now = nowAEST();
   const target = new Date(now.getFullYear(), now.getMonth() - monthsBack, 1);
@@ -32,14 +30,33 @@ function getMonthRange(monthsBack: number): { from: string; to: string; label: s
   return { from, to, label };
 }
 
+function getMonthName(monthsBack: number): string {
+  const now = nowAEST();
+  const target = new Date(now.getFullYear(), now.getMonth() - monthsBack, 1);
+  return target.toLocaleString("en-AU", { month: "long", year: "numeric" });
+}
+
 export function ReportFilters({ onGenerate }: ReportFiltersProps) {
   const { customers, loading: customersLoading } = useCustomers();
   const [customerId, setCustomerId] = useState("");
-  const [period, setPeriod] = useState<Period>("last_month");
+  const [period, setPeriod] = useState("1"); // monthsBack as string, or "custom"
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
   const [groupByProject, setGroupByProject] = useState(false);
   const [error, setError] = useState("");
+
+  const periodOptions = useMemo(() => {
+    const options = [];
+    options.push({ value: "0", label: `Current month — ${getMonthName(0)}` });
+    for (let i = 1; i <= 5; i++) {
+      const label = i === 1
+        ? `Previous month — ${getMonthName(i)}`
+        : `${getMonthName(i)}`;
+      options.push({ value: String(i), label });
+    }
+    options.push({ value: "custom", label: "Custom date range" });
+    return options;
+  }, []);
 
   function handleGenerate() {
     if (!customerId) {
@@ -62,7 +79,7 @@ export function ReportFilters({ onGenerate }: ReportFiltersProps) {
       to = customTo;
       periodLabel = `${customFrom} to ${customTo}`;
     } else {
-      const monthsBack = period === "this_month" ? 0 : period === "last_month" ? 1 : period === "prior_month" ? 2 : 3;
+      const monthsBack = parseInt(period, 10);
       const range = getMonthRange(monthsBack);
       from = range.from;
       to = range.to;
@@ -86,14 +103,6 @@ export function ReportFilters({ onGenerate }: ReportFiltersProps) {
     ...customers.map((c) => ({ value: c.id, label: c.name })),
   ];
 
-  const periodOptions = [
-    { value: "last_month", label: "Last calendar month" },
-    { value: "prior_month", label: "Prior calendar month" },
-    { value: "two_months_prior", label: "Two months prior" },
-    { value: "custom", label: "Custom date range" },
-    { value: "this_month", label: "This month" },
-  ];
-
   return (
     <div className="space-y-4">
       <Select
@@ -110,7 +119,7 @@ export function ReportFilters({ onGenerate }: ReportFiltersProps) {
       <Select
         label="Time Period"
         value={period}
-        onChange={(e) => setPeriod(e.target.value as Period)}
+        onChange={(e) => setPeriod(e.target.value)}
         options={periodOptions}
       />
 
@@ -142,7 +151,7 @@ export function ReportFilters({ onGenerate }: ReportFiltersProps) {
       {error && <p className="text-sm text-red-400">{error}</p>}
 
       <Button onClick={handleGenerate} className="w-full">
-        Generate Report
+        View Report
       </Button>
     </div>
   );

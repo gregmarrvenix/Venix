@@ -16,6 +16,7 @@ export function generateTimeReport(options: PdfOptions): Uint8Array {
     options;
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
+  const isAllCustomers = customerName === "All Customers";
 
   // Dark header bar
   doc.setFillColor(30, 41, 59); // slate-800 dark
@@ -50,14 +51,79 @@ export function generateTimeReport(options: PdfOptions): Uint8Array {
 
   let yPos = 61;
 
-  // Sort entries by date then start_time
+  // Sort entries by descending date, then descending start_time
   const sorted = [...entries].sort((a, b) => {
-    const dateCompare = a.entry_date.localeCompare(b.entry_date);
+    const dateCompare = b.entry_date.localeCompare(a.entry_date);
     if (dateCompare !== 0) return dateCompare;
-    return a.start_time.localeCompare(b.start_time);
+    return b.start_time.localeCompare(a.start_time);
   });
 
-  if (groupByProject) {
+  if (isAllCustomers) {
+    // Group by customer, then sort entries within each group by descending date
+    const customerGroups = new Map<string, TimeEntry[]>();
+    for (const entry of sorted) {
+      const name = entry.customer?.name || "Unknown";
+      if (!customerGroups.has(name)) customerGroups.set(name, []);
+      customerGroups.get(name)!.push(entry);
+    }
+
+    let grandTotal = 0;
+
+    for (const [custName, custEntries] of customerGroups) {
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(79, 70, 229); // indigo
+      doc.text(custName, 14, yPos);
+      doc.setTextColor(31, 41, 55);
+      yPos += 4;
+
+      const rows = custEntries.map((e) => [
+        formatDate(e.entry_date),
+        e.project?.name || "",
+        formatTime(e.start_time),
+        formatTime(e.end_time),
+        calculateHours(e.start_time, e.end_time, e.break_minutes ?? 0).toFixed(2),
+        e.contractor?.display_name || "",
+        e.description || "",
+      ]);
+
+      autoTable(doc, {
+        startY: yPos,
+        head: [["Date", "Project", "Start", "Finish", "Hours", "Contractor", "Description"]],
+        body: rows,
+        theme: "grid",
+        headStyles: { fillColor: [99, 102, 241] },
+        styles: { fontSize: 8 },
+        columnStyles: {
+          0: { cellWidth: 22 },
+          1: { cellWidth: 28 },
+          2: { cellWidth: 16 },
+          3: { cellWidth: 16 },
+          4: { cellWidth: 14 },
+          5: { cellWidth: 28 },
+          6: { cellWidth: "auto" },
+        },
+      });
+
+      const subtotal = custEntries.reduce(
+        (sum, e) => sum + calculateHours(e.start_time, e.end_time, e.break_minutes ?? 0),
+        0
+      );
+      grandTotal += subtotal;
+
+      yPos =
+        (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable
+          .finalY + 4;
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "bold");
+      doc.text(`Subtotal: ${subtotal.toFixed(2)} hours`, 14, yPos);
+      yPos += 10;
+    }
+
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.text(`Total: ${grandTotal.toFixed(2)} hours`, 14, yPos);
+  } else if (groupByProject) {
     // Group by project
     const grouped = new Map<string, TimeEntry[]>();
     for (const entry of sorted) {
@@ -78,25 +144,29 @@ export function generateTimeReport(options: PdfOptions): Uint8Array {
 
       const rows = projectEntries.map((e) => [
         formatDate(e.entry_date),
+        e.project?.name || "",
         formatTime(e.start_time),
         formatTime(e.end_time),
+        calculateHours(e.start_time, e.end_time, e.break_minutes ?? 0).toFixed(2),
         e.contractor?.display_name || "",
         e.description || "",
       ]);
 
       autoTable(doc, {
         startY: yPos,
-        head: [["Date", "Start", "Finish", "Contractor", "Description"]],
+        head: [["Date", "Project", "Start", "Finish", "Hours", "Contractor", "Description"]],
         body: rows,
         theme: "grid",
         headStyles: { fillColor: [99, 102, 241] },
-        styles: { fontSize: 9 },
+        styles: { fontSize: 8 },
         columnStyles: {
           0: { cellWidth: 22 },
-          1: { cellWidth: 18 },
-          2: { cellWidth: 18 },
-          3: { cellWidth: 30 },
-          4: { cellWidth: "auto" },
+          1: { cellWidth: 28 },
+          2: { cellWidth: 16 },
+          3: { cellWidth: 16 },
+          4: { cellWidth: 14 },
+          5: { cellWidth: 28 },
+          6: { cellWidth: "auto" },
         },
       });
 
@@ -119,27 +189,32 @@ export function generateTimeReport(options: PdfOptions): Uint8Array {
     doc.setFont("helvetica", "bold");
     doc.text(`Total: ${grandTotal.toFixed(2)} hours`, 14, yPos);
   } else {
+    // Flat table with project column
     const rows = sorted.map((e) => [
       formatDate(e.entry_date),
+      e.project?.name || "",
       formatTime(e.start_time),
       formatTime(e.end_time),
+      calculateHours(e.start_time, e.end_time, e.break_minutes ?? 0).toFixed(2),
       e.contractor?.display_name || "",
       e.description || "",
     ]);
 
     autoTable(doc, {
       startY: yPos,
-      head: [["Date", "Start", "Finish", "Contractor", "Description"]],
+      head: [["Date", "Project", "Start", "Finish", "Hours", "Contractor", "Description"]],
       body: rows,
       theme: "grid",
       headStyles: { fillColor: [99, 102, 241] },
-      styles: { fontSize: 9 },
+      styles: { fontSize: 8 },
       columnStyles: {
         0: { cellWidth: 22 },
-        1: { cellWidth: 18 },
-        2: { cellWidth: 18 },
-        3: { cellWidth: 30 },
-        4: { cellWidth: "auto" },
+        1: { cellWidth: 28 },
+        2: { cellWidth: 16 },
+        3: { cellWidth: 16 },
+        4: { cellWidth: 14 },
+        5: { cellWidth: 28 },
+        6: { cellWidth: "auto" },
       },
     });
 

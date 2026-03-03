@@ -9,14 +9,13 @@ export function useTimeEntries(contractorId: string, from: string, to: string) {
   const [loading, setLoading] = useState(true);
 
   const fetchEntries = useCallback(async () => {
-    if (!contractorId || !from || !to) return;
+    if (!from || !to) return;
     setLoading(true);
     try {
-      const params = new URLSearchParams({
-        contractor_id: contractorId,
-        from,
-        to,
-      });
+      const params = new URLSearchParams({ from, to });
+      if (contractorId) {
+        params.set("contractor_id", contractorId);
+      }
       const data = await apiFetch<TimeEntry[]>(`/api/time-entries?${params}`);
       setEntries(data);
     } catch (err) {

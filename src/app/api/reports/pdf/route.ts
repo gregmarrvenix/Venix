@@ -86,7 +86,7 @@ export async function POST(request: Request) {
 
   const pdfBytes = generateTimeReport({
     customerName,
-    periodLabel: `${body.from} — ${body.to}`,
+    periodLabel: body.period_label || `${body.from} — ${body.to}`,
     entries: entries ?? [],
     groupByProject: body.group_by_project ?? false,
     logoPng,

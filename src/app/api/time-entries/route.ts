@@ -11,7 +11,8 @@ export async function GET(request: Request) {
   }
 
   const { searchParams } = new URL(request.url);
-  const contractorId = searchParams.get("contractor_id") ?? user.contractor_id;
+  const contractorParam = searchParams.get("contractor_id");
+  const contractorId = contractorParam === "__all__" ? null : (contractorParam ?? user.contractor_id);
   const customerId = searchParams.get("customer_id");
   const from = searchParams.get("from");
   const to = searchParams.get("to");
