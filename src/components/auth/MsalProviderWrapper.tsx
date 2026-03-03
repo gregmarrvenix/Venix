@@ -8,6 +8,15 @@ import { setMsalInstance } from "@/lib/api-client";
 
 const msalApp = new PublicClientApplication(msalConfig);
 
+// Store ID token from redirect login — acquireTokenSilent may return empty idToken
+let redirectIdToken: string | null = null;
+
+export function consumeRedirectIdToken(): string | null {
+  const t = redirectIdToken;
+  redirectIdToken = null;
+  return t;
+}
+
 export default function MsalProviderWrapper({
   children,
 }: {
@@ -16,10 +25,20 @@ export default function MsalProviderWrapper({
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    msalApp.initialize().then(() => {
-      setMsalInstance(msalApp);
-      setReady(true);
-    });
+    msalApp
+      .initialize()
+      .then(() => msalApp.handleRedirectPromise())
+      .then((result) => {
+        if (result?.idToken) {
+          redirectIdToken = result.idToken;
+        }
+        setMsalInstance(msalApp);
+        setReady(true);
+      })
+      .catch((err) => {
+        console.error("MSAL init error:", err);
+        setReady(true);
+      });
   }, []);
 
   if (!ready) return null;

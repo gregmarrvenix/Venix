@@ -9,3 +9,5 @@ out/
 Thumbs.db
 *.tsbuildinfo
 next-env.d.ts
+
+.vercel

@@ -15,6 +15,7 @@ import {
 } from "@azure/msal-browser";
 import { loginRequest } from "@/lib/msal-config";
 import type { AuthUser } from "@/lib/types";
+import { consumeRedirectIdToken } from "./MsalProviderWrapper";
 import LoginScreen from "./LoginScreen";
 
 interface AuthContextValue {
@@ -92,17 +93,28 @@ export default function AuthGuard({ children }: { children: ReactNode }) {
           return;
         }
 
-        const tokenResponse = await instance.acquireTokenSilent({
-          ...loginRequest,
-          account: accounts[0],
-        });
+        // 1. Try token captured from login redirect
+        let token = consumeRedirectIdToken();
+
+        // 2. Fall back to acquireTokenSilent
+        if (!token) {
+          const tokenResponse = await instance.acquireTokenSilent({
+            ...loginRequest,
+            account: accounts[0],
+          });
+          token = tokenResponse.idToken || tokenResponse.accessToken;
+        }
+
+        if (!token) {
+          // Force re-login if no token available
+          instance.loginRedirect(loginRequest);
+          return;
+        }
 
         const res = await fetch("/api/auth/validate", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${tokenResponse.idToken}`,
-          },
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token }),
         });
 
         if (!res.ok) {

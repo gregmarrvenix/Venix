@@ -42,6 +42,23 @@ export interface TimeEntry {
   project?: Project;
 }
 
+export interface Expense {
+  id: string;
+  contractor_id: string;
+  customer_id: string;
+  project_id: string;
+  expense_date: string;
+  amount: number;
+  category: string;
+  description: string;
+  is_billable: boolean;
+  created_at: string;
+  updated_at: string;
+  contractor?: Contractor;
+  customer?: Customer;
+  project?: Project;
+}
+
 export interface AuthUser {
   contractor_id: string;
   email: string;

@@ -11,7 +11,9 @@ const navLinks = [
   { href: "/customers", label: "Customers" },
   { href: "/projects", label: "Projects" },
   { href: "/contractors", label: "Contractors" },
+  { href: "/expenses", label: "Expenses" },
   { href: "/reports", label: "Reports" },
+  { href: "/import", label: "Import" },
 ];
 
 export default function Header() {

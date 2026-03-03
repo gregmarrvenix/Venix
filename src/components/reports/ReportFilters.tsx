@@ -35,7 +35,7 @@ function getMonthRange(monthsBack: number): { from: string; to: string; label: s
 export function ReportFilters({ onGenerate }: ReportFiltersProps) {
   const { customers, loading: customersLoading } = useCustomers();
   const [customerId, setCustomerId] = useState("");
-  const [period, setPeriod] = useState<Period>("this_month");
+  const [period, setPeriod] = useState<Period>("last_month");
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
   const [groupByProject, setGroupByProject] = useState(false);
@@ -82,11 +82,11 @@ export function ReportFilters({ onGenerate }: ReportFiltersProps) {
   const customerOptions = customers.map((c) => ({ value: c.id, label: c.name }));
 
   const periodOptions = [
-    { value: "this_month", label: "This month" },
     { value: "last_month", label: "Last calendar month" },
     { value: "prior_month", label: "Prior calendar month" },
     { value: "two_months_prior", label: "Two months prior" },
     { value: "custom", label: "Custom date range" },
+    { value: "this_month", label: "This month" },
   ];
 
   return (

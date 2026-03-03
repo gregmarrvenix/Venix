@@ -23,7 +23,7 @@ export async function POST(request: Request) {
         {
           role: "system",
           content:
-            "Clean up this voice-to-text transcription for a work timesheet description. Fix grammar, remove filler words (um, uh, like), make it concise and professional. Return only the cleaned text.",
+            "Clean up this voice-to-text transcription for a work timesheet description. Fix grammar, remove filler words (um, uh, like), make it concise and professional. Ensure the first letter is capitalised and proper nouns are capitalised. Return only the cleaned text.",
         },
         { role: "user", content: body.text },
       ],
@@ -32,7 +32,7 @@ export async function POST(request: Request) {
 
     const cleanedText = completion.choices[0]?.message?.content ?? body.text;
 
-    return NextResponse.json({ cleaned_text: cleanedText });
+    return NextResponse.json({ text: cleanedText });
   } catch {
     return NextResponse.json(
       { error: "AI cleanup failed" },
