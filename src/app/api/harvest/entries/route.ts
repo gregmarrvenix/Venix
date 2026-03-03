@@ -8,7 +8,8 @@ import type {
 export async function POST(request: Request) {
   try {
     await getAuthUser(request);
-  } catch {
+  } catch (err) {
+    console.error("Harvest entries auth error:", err instanceof Error ? err.message : err);
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
