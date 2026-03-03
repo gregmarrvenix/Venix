@@ -6,14 +6,30 @@ import type {
 } from "@/lib/harvest-types";
 
 export async function POST(request: Request) {
+  // Clone the request so we can read headers for auth and body separately
+  let body: { token?: string; accountId?: string; from?: string; to?: string };
+
   try {
     await getAuthUser(request);
   } catch (err) {
-    console.error("Harvest entries auth error:", err instanceof Error ? err.message : err);
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const message = err instanceof Error ? err.message : "Unknown auth error";
+    console.error("Harvest entries auth failed:", message);
+    return NextResponse.json(
+      { error: `Auth failed: ${message}` },
+      { status: 401 }
+    );
   }
 
-  const { token, accountId, from, to } = await request.json();
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json(
+      { error: "Invalid JSON body" },
+      { status: 400 }
+    );
+  }
+
+  const { token, accountId, from, to } = body;
 
   if (!token || !accountId || !from || !to) {
     return NextResponse.json(
@@ -27,7 +43,7 @@ export async function POST(request: Request) {
 
   try {
     while (true) {
-      const url = `https://api.harvestapp.com/v2/time_entries?from=${from}&to=${to}&per_page=2000&page=${page}`;
+      const url = `https://api.harvestapp.com/v2/time_entries?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&per_page=2000&page=${page}`;
       const res = await fetch(url, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -37,10 +53,10 @@ export async function POST(request: Request) {
       });
 
       if (!res.ok) {
-        const body = await res.text();
+        const text = await res.text();
         return NextResponse.json(
-          { error: `Harvest API error (${res.status}): ${body}` },
-          { status: res.status }
+          { error: `Harvest API error (${res.status}): ${text}` },
+          { status: 502 }
         );
       }
 
@@ -52,8 +68,8 @@ export async function POST(request: Request) {
     }
   } catch (err) {
     return NextResponse.json(
-      { error: `Failed to fetch from Harvest: ${err instanceof Error ? err.message : String(err)}` },
-      { status: 500 }
+      { error: `Harvest fetch failed: ${err instanceof Error ? err.message : String(err)}` },
+      { status: 502 }
     );
   }
 

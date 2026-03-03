@@ -8,11 +8,26 @@ const BATCH_SIZE = 500;
 export async function POST(request: Request) {
   try {
     await getAuthUser(request);
-  } catch {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown auth error";
+    console.error("Harvest import auth failed:", message);
+    return NextResponse.json(
+      { error: `Auth failed: ${message}` },
+      { status: 401 }
+    );
   }
 
-  const { entries }: { entries: ImportEntry[] } = await request.json();
+  let body: { entries?: ImportEntry[] };
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json(
+      { error: "Invalid JSON body" },
+      { status: 400 }
+    );
+  }
+
+  const { entries } = body;
 
   if (!entries || !Array.isArray(entries) || entries.length === 0) {
     return NextResponse.json(
