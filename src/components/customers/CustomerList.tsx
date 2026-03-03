@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useCustomers } from "@/hooks/useCustomers";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
@@ -9,11 +9,13 @@ import { CustomerForm } from "./CustomerForm";
 import type { Customer } from "@/lib/types";
 
 export function CustomerList() {
-  const { customers, loading, create, update, remove, refresh } = useCustomers({ includeInactive: true });
+  const { customers, loading, create, update, refresh } = useCustomers({ includeInactive: true });
   const toast = useToast();
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [showCreate, setShowCreate] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+
+  const activeCustomers = useMemo(() => customers.filter((c) => c.is_active), [customers]);
+  const inactiveCustomers = useMemo(() => customers.filter((c) => !c.is_active), [customers]);
 
   async function handleCreate(data: { name: string }) {
     await create(data.name);
@@ -28,24 +30,13 @@ export function CustomerList() {
     toast.success("Customer updated");
   }
 
-  async function handleDeactivate(id: string) {
+  async function handleToggleActive(id: string, currentlyActive: boolean) {
     try {
-      await remove(id);
-      setConfirmDelete(null);
-      toast.success("Customer deactivated");
+      await update(id, { is_active: !currentlyActive });
+      toast.success(currentlyActive ? "Customer deactivated" : "Customer activated");
       refresh();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to deactivate");
-    }
-  }
-
-  async function handleReactivate(id: string) {
-    try {
-      await update(id, { is_active: true });
-      toast.success("Customer reactivated");
-      refresh();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to reactivate");
+      toast.error(err instanceof Error ? err.message : "Failed to update customer");
     }
   }
 
@@ -68,74 +59,104 @@ export function CustomerList() {
         </Button>
       </div>
 
-      {/* Desktop table */}
+      {/* Active customers — Desktop table */}
       <div className="hidden md:block">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-slate-700 text-left text-slate-400">
               <th className="pb-2 font-medium">Name</th>
-              <th className="pb-2 font-medium">Status</th>
               <th className="pb-2 font-medium text-right">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {customers.map((c) => (
+            {activeCustomers.map((c) => (
               <tr key={c.id} className="border-b border-slate-700/50">
                 <td className="py-3 text-slate-200">{c.name}</td>
-                <td className="py-3">
-                  <span className={`text-xs px-2 py-0.5 rounded-full ${c.is_active ? "bg-green-500/10 text-green-400" : "bg-slate-700 text-slate-400"}`}>
-                    {c.is_active ? "Active" : "Inactive"}
-                  </span>
-                </td>
                 <td className="py-3 text-right">
                   <div className="flex gap-1 justify-end">
                     <Button variant="ghost" size="sm" onClick={() => setEditingCustomer(c)}>
                       Edit
                     </Button>
-                    {c.is_active ? (
-                      <Button variant="ghost" size="sm" onClick={() => setConfirmDelete(c.id)} className="text-red-400 hover:text-red-300">
-                        Deactivate
-                      </Button>
-                    ) : (
-                      <Button variant="ghost" size="sm" onClick={() => handleReactivate(c.id)} className="text-green-400 hover:text-green-300">
-                        Reactivate
-                      </Button>
-                    )}
+                    <Button variant="ghost" size="sm" onClick={() => handleToggleActive(c.id, true)} className="text-red-400 hover:text-red-300">
+                      Deactivate
+                    </Button>
                   </div>
                 </td>
               </tr>
             ))}
+            {activeCustomers.length === 0 && (
+              <tr><td colSpan={2} className="py-6 text-center text-slate-400">No active customers</td></tr>
+            )}
           </tbody>
         </table>
       </div>
 
-      {/* Mobile cards */}
+      {/* Active customers — Mobile cards */}
       <div className="md:hidden space-y-2">
-        {customers.map((c) => (
+        {activeCustomers.map((c) => (
           <div key={c.id} className="rounded-lg bg-slate-800 border border-slate-700 p-3 flex items-center justify-between">
-            <div>
-              <span className="text-slate-200 font-medium">{c.name}</span>
-              <span className={`ml-2 text-xs px-2 py-0.5 rounded-full ${c.is_active ? "bg-green-500/10 text-green-400" : "bg-slate-700 text-slate-400"}`}>
-                {c.is_active ? "Active" : "Inactive"}
-              </span>
-            </div>
+            <span className="text-slate-200 font-medium">{c.name}</span>
             <div className="flex gap-1">
               <Button variant="ghost" size="sm" onClick={() => setEditingCustomer(c)}>
                 Edit
               </Button>
-              {c.is_active ? (
-                <Button variant="ghost" size="sm" onClick={() => setConfirmDelete(c.id)} className="text-red-400">
-                  Deactivate
-                </Button>
-              ) : (
-                <Button variant="ghost" size="sm" onClick={() => handleReactivate(c.id)} className="text-green-400">
-                  Reactivate
-                </Button>
-              )}
+              <Button variant="ghost" size="sm" onClick={() => handleToggleActive(c.id, true)} className="text-red-400">
+                Deactivate
+              </Button>
             </div>
           </div>
         ))}
+        {activeCustomers.length === 0 && (
+          <p className="text-slate-400 text-center py-6">No active customers</p>
+        )}
       </div>
+
+      {/* Inactive customers section */}
+      {inactiveCustomers.length > 0 && (
+        <>
+          <h3 className="text-sm font-medium text-slate-400 mt-8 mb-3">Inactive Customers</h3>
+
+          {/* Desktop table */}
+          <div className="hidden md:block">
+            <table className="w-full text-sm">
+              <tbody>
+                {inactiveCustomers.map((c) => (
+                  <tr key={c.id} className="border-b border-slate-700/50">
+                    <td className="py-3 text-slate-400">{c.name}</td>
+                    <td className="py-3 text-right">
+                      <div className="flex gap-1 justify-end">
+                        <Button variant="ghost" size="sm" onClick={() => setEditingCustomer(c)}>
+                          Edit
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => handleToggleActive(c.id, false)} className="text-green-400 hover:text-green-300">
+                          Activate
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile cards */}
+          <div className="md:hidden space-y-2">
+            {inactiveCustomers.map((c) => (
+              <div key={c.id} className="rounded-lg bg-slate-800 border border-slate-700 p-3 flex items-center justify-between opacity-75">
+                <span className="text-slate-400 font-medium">{c.name}</span>
+                <div className="flex gap-1">
+                  <Button variant="ghost" size="sm" onClick={() => setEditingCustomer(c)}>
+                    Edit
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => handleToggleActive(c.id, false)} className="text-green-400">
+                    Activate
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
 
       <Modal isOpen={showCreate} onClose={() => setShowCreate(false)} title="New Customer">
         <CustomerForm onSave={handleCreate} onCancel={() => setShowCreate(false)} />
@@ -145,14 +166,6 @@ export function CustomerList() {
         {editingCustomer && (
           <CustomerForm customer={editingCustomer} onSave={handleUpdate} onCancel={() => setEditingCustomer(null)} />
         )}
-      </Modal>
-
-      <Modal isOpen={!!confirmDelete} onClose={() => setConfirmDelete(null)} title="Deactivate Customer">
-        <p className="text-slate-300 mb-4">Are you sure you want to deactivate this customer?</p>
-        <div className="flex gap-2 justify-end">
-          <Button variant="ghost" onClick={() => setConfirmDelete(null)}>Cancel</Button>
-          <Button variant="danger" onClick={() => confirmDelete && handleDeactivate(confirmDelete)}>Deactivate</Button>
-        </div>
       </Modal>
     </>
   );

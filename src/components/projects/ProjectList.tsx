@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useCustomers } from "@/hooks/useCustomers";
 import { useProjects } from "@/hooks/useProjects";
 import { Modal } from "@/components/ui/Modal";
@@ -13,13 +13,16 @@ import type { Project } from "@/lib/types";
 export function ProjectList() {
   const { customers } = useCustomers();
   const [filterCustomerId, setFilterCustomerId] = useState("");
-  const { projects, loading, create, update, remove } = useProjects(
-    filterCustomerId || undefined
-  );
+  const { projects, loading, create, update, refresh } = useProjects({
+    customerId: filterCustomerId || undefined,
+    includeInactive: true,
+  });
   const toast = useToast();
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [showCreate, setShowCreate] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+
+  const activeProjects = useMemo(() => projects.filter((p) => p.is_active), [projects]);
+  const inactiveProjects = useMemo(() => projects.filter((p) => !p.is_active), [projects]);
 
   async function handleCreate(data: { customer_id: string; name: string }) {
     await create(data.customer_id, data.name);
@@ -34,13 +37,13 @@ export function ProjectList() {
     toast.success("Project updated");
   }
 
-  async function handleDeactivate(id: string) {
+  async function handleToggleActive(id: string, currentlyActive: boolean) {
     try {
-      await remove(id);
-      setConfirmDelete(null);
-      toast.success("Project deactivated");
+      await update(id, { is_active: !currentlyActive });
+      toast.success(currentlyActive ? "Project deactivated" : "Project activated");
+      refresh();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to deactivate");
+      toast.error(err instanceof Error ? err.message : "Failed to update project");
     }
   }
 
@@ -72,48 +75,43 @@ export function ProjectList() {
         </div>
       </div>
 
-      {/* Desktop table */}
+      {/* Active projects — Desktop table */}
       <div className="hidden md:block">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-slate-700 text-left text-slate-400">
               <th className="pb-2 font-medium">Project Name</th>
               <th className="pb-2 font-medium">Customer</th>
-              <th className="pb-2 font-medium">Status</th>
               <th className="pb-2 font-medium text-right">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {projects.map((p) => (
+            {activeProjects.map((p) => (
               <tr key={p.id} className="border-b border-slate-700/50">
                 <td className="py-3 text-slate-200">{p.name}</td>
                 <td className="py-3 text-slate-400">{p.customer?.name ?? "—"}</td>
-                <td className="py-3">
-                  <span className={`text-xs px-2 py-0.5 rounded-full ${p.is_active ? "bg-green-500/10 text-green-400" : "bg-slate-700 text-slate-400"}`}>
-                    {p.is_active ? "Active" : "Inactive"}
-                  </span>
-                </td>
                 <td className="py-3 text-right">
                   <div className="flex gap-1 justify-end">
                     <Button variant="ghost" size="sm" onClick={() => setEditingProject(p)}>
                       Edit
                     </Button>
-                    {p.is_active && (
-                      <Button variant="ghost" size="sm" onClick={() => setConfirmDelete(p.id)} className="text-red-400 hover:text-red-300">
-                        Deactivate
-                      </Button>
-                    )}
+                    <Button variant="ghost" size="sm" onClick={() => handleToggleActive(p.id, true)} className="text-red-400 hover:text-red-300">
+                      Deactivate
+                    </Button>
                   </div>
                 </td>
               </tr>
             ))}
+            {activeProjects.length === 0 && (
+              <tr><td colSpan={3} className="py-6 text-center text-slate-400">No active projects</td></tr>
+            )}
           </tbody>
         </table>
       </div>
 
-      {/* Mobile cards */}
+      {/* Active projects — Mobile cards */}
       <div className="md:hidden space-y-2">
-        {projects.map((p) => (
+        {activeProjects.map((p) => (
           <div key={p.id} className="rounded-lg bg-slate-800 border border-slate-700 p-3">
             <div className="flex items-center justify-between">
               <div>
@@ -124,16 +122,70 @@ export function ProjectList() {
                 <Button variant="ghost" size="sm" onClick={() => setEditingProject(p)}>
                   Edit
                 </Button>
-                {p.is_active && (
-                  <Button variant="ghost" size="sm" onClick={() => setConfirmDelete(p.id)} className="text-red-400">
-                    Deactivate
-                  </Button>
-                )}
+                <Button variant="ghost" size="sm" onClick={() => handleToggleActive(p.id, true)} className="text-red-400">
+                  Deactivate
+                </Button>
               </div>
             </div>
           </div>
         ))}
+        {activeProjects.length === 0 && (
+          <p className="text-slate-400 text-center py-6">No active projects</p>
+        )}
       </div>
+
+      {/* Inactive projects section */}
+      {inactiveProjects.length > 0 && (
+        <>
+          <h3 className="text-sm font-medium text-slate-400 mt-8 mb-3">Inactive Projects</h3>
+
+          {/* Desktop table */}
+          <div className="hidden md:block">
+            <table className="w-full text-sm">
+              <tbody>
+                {inactiveProjects.map((p) => (
+                  <tr key={p.id} className="border-b border-slate-700/50">
+                    <td className="py-3 text-slate-400">{p.name}</td>
+                    <td className="py-3 text-slate-400">{p.customer?.name ?? "—"}</td>
+                    <td className="py-3 text-right">
+                      <div className="flex gap-1 justify-end">
+                        <Button variant="ghost" size="sm" onClick={() => setEditingProject(p)}>
+                          Edit
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => handleToggleActive(p.id, false)} className="text-green-400 hover:text-green-300">
+                          Activate
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile cards */}
+          <div className="md:hidden space-y-2">
+            {inactiveProjects.map((p) => (
+              <div key={p.id} className="rounded-lg bg-slate-800 border border-slate-700 p-3 opacity-75">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="text-slate-400 font-medium">{p.name}</span>
+                    <span className="text-slate-500 text-sm ml-2">{p.customer?.name}</span>
+                  </div>
+                  <div className="flex gap-1">
+                    <Button variant="ghost" size="sm" onClick={() => setEditingProject(p)}>
+                      Edit
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => handleToggleActive(p.id, false)} className="text-green-400">
+                      Activate
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
 
       <Modal isOpen={showCreate} onClose={() => setShowCreate(false)} title="New Project">
         <ProjectForm onSave={handleCreate} onCancel={() => setShowCreate(false)} />
@@ -143,14 +195,6 @@ export function ProjectList() {
         {editingProject && (
           <ProjectForm project={editingProject} onSave={handleUpdate} onCancel={() => setEditingProject(null)} />
         )}
-      </Modal>
-
-      <Modal isOpen={!!confirmDelete} onClose={() => setConfirmDelete(null)} title="Deactivate Project">
-        <p className="text-slate-300 mb-4">Are you sure you want to deactivate this project?</p>
-        <div className="flex gap-2 justify-end">
-          <Button variant="ghost" onClick={() => setConfirmDelete(null)}>Cancel</Button>
-          <Button variant="danger" onClick={() => confirmDelete && handleDeactivate(confirmDelete)}>Deactivate</Button>
-        </div>
       </Modal>
     </>
   );

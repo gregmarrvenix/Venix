@@ -5,12 +5,21 @@ import { apiFetch } from "@/lib/api-client";
 import { getCached, setCache, isStale } from "@/lib/cache";
 import type { Project } from "@/lib/types";
 
-function cacheKey(customerId?: string) {
-  return customerId ? `projects:${customerId}` : "projects:all";
+interface UseProjectsOptions {
+  customerId?: string;
+  includeInactive?: boolean;
 }
 
-export function useProjects(customerId?: string) {
-  const key = cacheKey(customerId);
+function cacheKey(customerId?: string, includeInactive?: boolean) {
+  const base = customerId ? `projects:${customerId}` : "projects:all";
+  return includeInactive ? `${base}:inactive` : base;
+}
+
+export function useProjects(customerIdOrOptions?: string | UseProjectsOptions) {
+  const customerId = typeof customerIdOrOptions === "string" ? customerIdOrOptions : customerIdOrOptions?.customerId;
+  const includeInactive = typeof customerIdOrOptions === "object" ? (customerIdOrOptions?.includeInactive ?? false) : false;
+  const key = cacheKey(customerId, includeInactive);
+
   const [projects, setProjects] = useState<Project[]>(
     () => getCached<Project[]>(key) ?? []
   );
@@ -25,9 +34,11 @@ export function useProjects(customerId?: string) {
     }
     if (!cached) setLoading(true);
     try {
-      const url = customerId
-        ? `/api/projects?customer_id=${customerId}`
-        : "/api/projects";
+      const params = new URLSearchParams();
+      if (customerId) params.set("customer_id", customerId);
+      if (includeInactive) params.set("include_inactive", "true");
+      const qs = params.toString();
+      const url = qs ? `/api/projects?${qs}` : "/api/projects";
       const data = await apiFetch<Project[]>(url);
       setProjects(data);
       setCache(key, data);
@@ -36,7 +47,7 @@ export function useProjects(customerId?: string) {
     } finally {
       setLoading(false);
     }
-  }, [customerId, key]);
+  }, [customerId, includeInactive, key]);
 
   useEffect(() => {
     fetchProjects();
