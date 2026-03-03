@@ -46,19 +46,24 @@ export function VoiceInput({ onResult }: VoiceInputProps) {
   }
 
   return (
-    <Button
-      type="button"
-      variant="ghost"
-      size="sm"
-      onClick={isListening ? stopListening : startListening}
-      className={
-        isListening
-          ? "animate-pulse bg-red-500/20 text-red-400 hover:bg-red-500/30"
-          : "text-slate-400 hover:text-slate-200"
-      }
-    >
-      {isListening ? <MicOnIcon /> : <MicIcon />}
-    </Button>
+    <div className="relative">
+      {isListening && (
+        <span className="absolute inset-0 rounded-lg bg-red-500/30 animate-ping" />
+      )}
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        onClick={isListening ? stopListening : startListening}
+        className={
+          isListening
+            ? "relative bg-red-500 text-white hover:bg-red-400"
+            : "text-slate-400 hover:text-slate-200"
+        }
+      >
+        {isListening ? <MicOnIcon /> : <MicIcon />}
+      </Button>
+    </div>
   );
 }
 
