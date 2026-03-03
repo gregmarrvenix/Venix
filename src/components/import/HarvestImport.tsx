@@ -281,7 +281,9 @@ export function HarvestImport() {
 
           const override = timeOverrides.get(e.id);
           const startTime = override?.start ?? parseHarvestTime(e.started_time!);
-          const endTime = override?.end ?? parseHarvestTime(e.ended_time!);
+          let endTime = override?.end ?? parseHarvestTime(e.ended_time!);
+          // Cross-midnight entries: cap at 23:59
+          if (endTime <= startTime && !override) endTime = "23:59";
 
           return {
             contractor_id: userMapping?.venixContractorId ?? contractorId,
@@ -364,13 +366,15 @@ export function HarvestImport() {
     });
   }, [entries, clientMappings, projectMappings, customers, projects]);
 
-  // Entries with invalid times (missing or end <= start)
+  // Entries with invalid times (missing or end <= start after cross-midnight fix)
   const invalidEntries = useMemo(() => {
     return entries.filter((e) => {
       if (!e.started_time || !e.ended_time) return true;
       const override = timeOverrides.get(e.id);
       const start = override?.start ?? parseHarvestTime(e.started_time);
-      const end = override?.end ?? parseHarvestTime(e.ended_time);
+      let end = override?.end ?? parseHarvestTime(e.ended_time);
+      // Cross-midnight entries: cap at 23:59
+      if (end <= start && !override) end = "23:59";
       return end <= start;
     });
   }, [entries, timeOverrides]);
