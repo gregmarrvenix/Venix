@@ -56,6 +56,11 @@ export function HarvestImport() {
   // Step 5: User mappings
   const [userMappings, setUserMappings] = useState<UserMapping[]>([]);
 
+  // Time corrections for invalid entries (keyed by Harvest entry id)
+  const [timeOverrides, setTimeOverrides] = useState<
+    Map<number, { start: string; end: string }>
+  >(new Map());
+
   // Step 7: Results
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState<{
@@ -254,7 +259,7 @@ export function HarvestImport() {
         }
       }
 
-      // Build import entries, filtering out invalid time ranges
+      // Build import entries, applying time overrides and filtering invalid
       const importEntries: ImportEntry[] = entries
         .filter((e) => e.started_time && e.ended_time)
         .map((e) => {
@@ -274,13 +279,17 @@ export function HarvestImport() {
             ? `${taskName} - ${notes}`
             : taskName || "";
 
+          const override = timeOverrides.get(e.id);
+          const startTime = override?.start ?? parseHarvestTime(e.started_time!);
+          const endTime = override?.end ?? parseHarvestTime(e.ended_time!);
+
           return {
             contractor_id: userMapping?.venixContractorId ?? contractorId,
             customer_id: clientMapping?.venixCustomerId ?? "",
             project_id: projMapping?.venixProjectId ?? "",
             entry_date: e.spent_date,
-            start_time: parseHarvestTime(e.started_time!),
-            end_time: parseHarvestTime(e.ended_time!),
+            start_time: startTime,
+            end_time: endTime,
             break_minutes: 0,
             description,
           };
@@ -354,6 +363,19 @@ export function HarvestImport() {
       };
     });
   }, [entries, clientMappings, projectMappings, customers, projects]);
+
+  // Entries with invalid times (missing or end <= start)
+  const invalidEntries = useMemo(() => {
+    return entries.filter((e) => {
+      if (!e.started_time || !e.ended_time) return true;
+      const override = timeOverrides.get(e.id);
+      const start = override?.start ?? parseHarvestTime(e.started_time);
+      const end = override?.end ?? parseHarvestTime(e.ended_time);
+      return end <= start;
+    });
+  }, [entries, timeOverrides]);
+
+  const validEntryCount = entries.length - invalidEntries.length;
 
   // Client breakdown for step 6 summary
   const clientBreakdown = useMemo(() => {
@@ -718,6 +740,87 @@ export function HarvestImport() {
             </p>
           )}
 
+          {/* Invalid entries section */}
+          {invalidEntries.length > 0 && (
+            <div className="space-y-3">
+              <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3">
+                <p className="text-sm font-medium text-amber-400">
+                  {invalidEntries.length} {invalidEntries.length === 1 ? "entry has" : "entries have"} invalid times (end ≤ start) and will be skipped unless corrected
+                </p>
+              </div>
+              <div className="max-h-60 overflow-auto rounded-lg border border-slate-700">
+                <table className="w-full text-left text-xs">
+                  <thead className="sticky top-0 bg-slate-800 text-slate-400">
+                    <tr>
+                      <th className="px-3 py-2">Date</th>
+                      <th className="px-3 py-2">Original</th>
+                      <th className="px-3 py-2">Start</th>
+                      <th className="px-3 py-2">End</th>
+                      <th className="px-3 py-2">Client / Project</th>
+                      <th className="px-3 py-2">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-700">
+                    {invalidEntries.map((e) => {
+                      const override = timeOverrides.get(e.id);
+                      const parsedStart = e.started_time ? parseHarvestTime(e.started_time) : "00:00";
+                      const parsedEnd = e.ended_time ? parseHarvestTime(e.ended_time) : "00:00";
+                      const currentStart = override?.start ?? parsedStart;
+                      const currentEnd = override?.end ?? parsedEnd;
+
+                      return (
+                        <tr key={e.id} className="text-slate-300">
+                          <td className="whitespace-nowrap px-3 py-2">{e.spent_date}</td>
+                          <td className="whitespace-nowrap px-3 py-2 text-slate-500">
+                            {e.started_time ?? "-"} → {e.ended_time ?? "-"}
+                          </td>
+                          <td className="px-2 py-1">
+                            <input
+                              type="time"
+                              value={currentStart}
+                              onChange={(ev) => {
+                                setTimeOverrides((prev) => {
+                                  const next = new Map(prev);
+                                  next.set(e.id, { start: ev.target.value, end: currentEnd });
+                                  return next;
+                                });
+                              }}
+                              className="w-24 rounded border border-slate-600 bg-slate-900 px-2 py-1 text-xs text-slate-200 focus:border-indigo-500 focus:outline-none"
+                            />
+                          </td>
+                          <td className="px-2 py-1">
+                            <input
+                              type="time"
+                              value={currentEnd}
+                              onChange={(ev) => {
+                                setTimeOverrides((prev) => {
+                                  const next = new Map(prev);
+                                  next.set(e.id, { start: currentStart, end: ev.target.value });
+                                  return next;
+                                });
+                              }}
+                              className="w-24 rounded border border-slate-600 bg-slate-900 px-2 py-1 text-xs text-slate-200 focus:border-indigo-500 focus:outline-none"
+                            />
+                          </td>
+                          <td className="px-3 py-2 text-slate-400">
+                            {e.client.name} / {e.project.name}
+                          </td>
+                          <td className="px-3 py-2">
+                            {currentEnd > currentStart ? (
+                              <span className="text-xs text-green-400">✓ Fixed</span>
+                            ) : (
+                              <span className="text-xs text-amber-400">Will skip</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
           <div className="flex gap-3">
             <Button
               variant="secondary"
@@ -728,7 +831,8 @@ export function HarvestImport() {
               Back
             </Button>
             <Button onClick={handleImport} className="flex-1">
-              Import {entries.length} Entries
+              Import {validEntryCount} {validEntryCount === 1 ? "Entry" : "Entries"}
+              {invalidEntries.length > 0 && ` (skipping ${invalidEntries.length})`}
             </Button>
           </div>
         </div>
