@@ -31,9 +31,13 @@ export function HarvestImport() {
 
   const [step, setStep] = useState<Step>(1);
 
-  // Step 1: Credentials
-  const [token, setToken] = useState("");
-  const [accountId, setAccountId] = useState("");
+  // Step 1: Credentials (persist in sessionStorage)
+  const [token, setToken] = useState(() =>
+    typeof window !== "undefined" ? sessionStorage.getItem("harvest_token") ?? "" : ""
+  );
+  const [accountId, setAccountId] = useState(() =>
+    typeof window !== "undefined" ? sessionStorage.getItem("harvest_account_id") ?? "" : ""
+  );
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
 
@@ -118,6 +122,8 @@ export function HarvestImport() {
 
   // Step 1 → 2: Fetch entries
   async function handleFetch() {
+    sessionStorage.setItem("harvest_token", token);
+    sessionStorage.setItem("harvest_account_id", accountId);
     setStep(2);
     setFetchError("");
 
