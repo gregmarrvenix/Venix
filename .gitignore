@@ -1,6 +1,11 @@
 node_modules/
+.next/
+out/
 .vercel/
 .env
 .env.local
+.env.production.local
 .DS_Store
 Thumbs.db
+*.tsbuildinfo
+next-env.d.ts

@@ -1,0 +1,69 @@
+import { NextResponse } from "next/server";
+import { getAuthUser } from "@/lib/auth";
+import { supabase } from "@/lib/supabase";
+
+export async function GET(request: Request) {
+  try {
+    await getAuthUser(request);
+  } catch {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { searchParams } = new URL(request.url);
+  const customerId = searchParams.get("customer_id");
+
+  let query = supabase
+    .from("projects")
+    .select("*, customer:customers(*)")
+    .eq("is_active", true)
+    .order("name");
+
+  if (customerId) {
+    query = query.eq("customer_id", customerId);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  // Sort by customer name then project name
+  const sorted = (data ?? []).sort((a, b) => {
+    const custA = a.customer?.name ?? "";
+    const custB = b.customer?.name ?? "";
+    const custCompare = custA.localeCompare(custB);
+    if (custCompare !== 0) return custCompare;
+    return a.name.localeCompare(b.name);
+  });
+
+  return NextResponse.json(sorted);
+}
+
+export async function POST(request: Request) {
+  try {
+    await getAuthUser(request);
+  } catch {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const body = await request.json();
+  if (!body.customer_id || !body.name) {
+    return NextResponse.json(
+      { error: "customer_id and name are required" },
+      { status: 400 }
+    );
+  }
+
+  const { data, error } = await supabase
+    .from("projects")
+    .insert({ customer_id: body.customer_id, name: body.name })
+    .select()
+    .single();
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json(data, { status: 201 });
+}
