@@ -185,6 +185,15 @@ export default function AuthGuard({ children }: { children: ReactNode }) {
             {errorMsg}
           </p>
         )}
+        <button
+          onClick={() => {
+            sessionStorage.removeItem(AUTH_CACHE_KEY);
+            instance.logoutRedirect({ postLogoutRedirectUri: "/" });
+          }}
+          className="mt-6 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 transition-colors"
+        >
+          Back to Login
+        </button>
       </div>
     );
   }
