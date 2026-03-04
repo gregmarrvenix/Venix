@@ -4,7 +4,7 @@ import { useState, useEffect, type FormEvent } from "react";
 import { useAuthContext } from "@/components/auth/AuthGuard";
 import { useProjects } from "@/hooks/useProjects";
 import { useContractors } from "@/hooks/useContractors";
-import { todayAEST } from "@/lib/timezone";
+import { todayAEST, calculateHours } from "@/lib/timezone";
 import { Select } from "@/components/ui/Select";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
@@ -163,6 +163,12 @@ export function TimeEntryForm({ onSubmit, initialData }: TimeEntryFormProps) {
           onChange={(e) => setBreakMinutes(parseInt(e.target.value) || 0)}
         />
       </div>
+
+      {startTime && endTime && endTime > startTime && (
+        <p className="text-sm text-indigo-400 font-medium">
+          Total: {calculateHours(startTime, endTime, breakMinutes).toFixed(2)} hours
+        </p>
+      )}
 
       <div>
         <label className="block text-sm text-slate-400 mb-1">

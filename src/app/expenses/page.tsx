@@ -16,7 +16,7 @@ export default function ExpensesPage() {
   const today = todayAEST();
   const sevenDaysAgo = (() => {
     const d = new Date(today);
-    d.setDate(d.getDate() - 7);
+    d.setDate(d.getDate() - 30);
     return d.toISOString().split("T")[0];
   })();
 

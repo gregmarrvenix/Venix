@@ -21,7 +21,7 @@ export function RecentExpenses({ refreshKey }: RecentExpensesProps) {
   const dateRange = useMemo(() => {
     const today = todayAEST();
     const from = new Date(today);
-    from.setDate(from.getDate() - 7);
+    from.setDate(from.getDate() - 30);
     const fromStr = from.toISOString().split("T")[0];
     return { from: fromStr, to: today };
   }, []);
