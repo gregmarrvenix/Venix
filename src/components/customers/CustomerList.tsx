@@ -53,7 +53,7 @@ export function CustomerList() {
   return (
     <>
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-semibold text-slate-200">Customers</h2>
+        <h2 className="text-lg font-semibold text-slate-200">Active Customers</h2>
         <Button size="sm" onClick={() => setShowCreate(true)}>
           Add Customer
         </Button>
@@ -114,7 +114,9 @@ export function CustomerList() {
       {/* Inactive customers section */}
       {inactiveCustomers.length > 0 && (
         <>
-          <h3 className="text-sm font-medium text-slate-400 mt-8 mb-3">Inactive Customers</h3>
+          <div className="mt-8 mb-4 border-t border-slate-700 pt-4">
+            <h2 className="text-lg font-semibold text-slate-400">Inactive Customers</h2>
+          </div>
 
           {/* Desktop table */}
           <div className="hidden md:block">

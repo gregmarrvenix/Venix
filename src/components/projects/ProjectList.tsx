@@ -62,7 +62,7 @@ export function ProjectList() {
   return (
     <>
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
-        <h2 className="text-lg font-semibold text-slate-200">Projects</h2>
+        <h2 className="text-lg font-semibold text-slate-200">Active Projects</h2>
         <div className="flex gap-2 items-center w-full sm:w-auto">
           <Select
             value={filterCustomerId}
@@ -137,7 +137,9 @@ export function ProjectList() {
       {/* Inactive projects section */}
       {inactiveProjects.length > 0 && (
         <>
-          <h3 className="text-sm font-medium text-slate-400 mt-8 mb-3">Inactive Projects</h3>
+          <div className="mt-8 mb-4 border-t border-slate-700 pt-4">
+            <h2 className="text-lg font-semibold text-slate-400">Inactive Projects</h2>
+          </div>
 
           {/* Desktop table */}
           <div className="hidden md:block">
