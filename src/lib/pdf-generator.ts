@@ -28,23 +28,21 @@ export function generateTimeReport(options: PdfOptions): ArrayBuffer {
   }
 
   // Title text in header bar
-  doc.setFontSize(16);
+  doc.setFontSize(14);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(255, 255, 255);
   const titleX = logoPng ? 48 : 14;
-  doc.text("Job Summary", titleX, 18);
+  doc.text(`Timesheet Data - ${periodLabel}`, titleX, 18);
 
   // Reset text color
   doc.setTextColor(31, 41, 55);
 
-  // Customer / period info
+  // Customer info
   doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
   doc.text(`Customer: ${customerName}`, 14, 46);
-  doc.setFont("helvetica", "normal");
-  doc.text(`Period: ${periodLabel}`, 14, 53);
 
-  let yPos = 61;
+  let yPos = 54;
 
   // Sort entries by descending date, then descending start_time
   const sorted = [...entries].sort((a, b) => {
@@ -254,23 +252,21 @@ export function generateExpenseReport(options: ExpensePdfOptions): ArrayBuffer {
   }
 
   // Title text in header bar
-  doc.setFontSize(16);
+  doc.setFontSize(14);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(255, 255, 255);
   const titleX = logoPng ? 48 : 14;
-  doc.text("Expense Summary", titleX, 18);
+  doc.text(`Expense Data - ${periodLabel}`, titleX, 18);
 
   // Reset text color
   doc.setTextColor(31, 41, 55);
 
-  // Customer / period info
+  // Customer info
   doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
   doc.text(`Customer: ${customerName}`, 14, 46);
-  doc.setFont("helvetica", "normal");
-  doc.text(`Period: ${periodLabel}`, 14, 53);
 
-  let yPos = 61;
+  let yPos = 54;
 
   const sorted = [...expenses].sort((a, b) =>
     b.expense_date.localeCompare(a.expense_date)
