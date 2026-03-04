@@ -14,6 +14,7 @@ export interface ReportFilterValues {
   to: string;
   group_by_project: boolean;
   periodLabel: string;
+  _fetchKey: number;
 }
 
 interface ReportFiltersProps {
@@ -104,6 +105,7 @@ export function ReportFilters({ onGenerate }: ReportFiltersProps) {
       to,
       group_by_project: overrideGroupByProject ?? groupByProject,
       periodLabel,
+      _fetchKey: Date.now(),
     });
   }, [customerId, period, customFrom, customTo, groupByProject, customers, onGenerate]);
 

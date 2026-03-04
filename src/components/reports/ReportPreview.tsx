@@ -73,7 +73,7 @@ export function ReportPreview({ filters }: ReportPreviewProps) {
       });
 
     return () => { cancelled = true; };
-  }, [filters.customer_id, filters.from, filters.to]);
+  }, [filters.customer_id, filters.from, filters.to, filters._fetchKey]);
 
   async function handleGeneratePdf() {
     setGenerating(true);
