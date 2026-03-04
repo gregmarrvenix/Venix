@@ -93,7 +93,7 @@ export function generateTimeReport(options: PdfOptions): ArrayBuffer {
           2: { cellWidth: 16 },
           3: { cellWidth: 16 },
           4: { cellWidth: 14 },
-          5: { cellWidth: 28 },
+          5: { cellWidth: "wrap" },
           6: { cellWidth: "auto" },
         },
       });
@@ -158,7 +158,7 @@ export function generateTimeReport(options: PdfOptions): ArrayBuffer {
           2: { cellWidth: 16 },
           3: { cellWidth: 16 },
           4: { cellWidth: 14 },
-          5: { cellWidth: 28 },
+          5: { cellWidth: "wrap" },
           6: { cellWidth: "auto" },
         },
       });
@@ -198,7 +198,7 @@ export function generateTimeReport(options: PdfOptions): ArrayBuffer {
       head: [["Date", "Project", "Start", "Finish", "Hours", "Contractor", "Description"]],
       body: rows,
       theme: "grid",
-      headStyles: { fillColor: [99, 102, 241] },
+      headStyles: { fillColor: [99, 102, 241], halign: "center" },
       styles: { fontSize: 8 },
       columnStyles: {
         0: { cellWidth: 22 },
@@ -206,7 +206,7 @@ export function generateTimeReport(options: PdfOptions): ArrayBuffer {
         2: { cellWidth: 16 },
         3: { cellWidth: 16 },
         4: { cellWidth: 14 },
-        5: { cellWidth: 28 },
+        5: { cellWidth: "wrap" },
         6: { cellWidth: "auto" },
       },
     });
@@ -278,7 +278,7 @@ export function generateExpenseReport(options: ExpensePdfOptions): ArrayBuffer {
     1: { cellWidth: 28 },
     2: { cellWidth: 20 },
     3: { cellWidth: 16 },
-    4: { cellWidth: 28 },
+    4: { cellWidth: "wrap" as const },
     5: { cellWidth: "auto" as const },
   };
 
@@ -385,7 +385,7 @@ export function generateExpenseReport(options: ExpensePdfOptions): ArrayBuffer {
       head: [headRow],
       body: sorted.map(expenseRow),
       theme: "grid",
-      headStyles: { fillColor: [99, 102, 241] },
+      headStyles: { fillColor: [99, 102, 241], halign: "center" },
       styles: { fontSize: 8 },
       columnStyles: colStyles,
     });
