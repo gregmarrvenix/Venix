@@ -73,11 +73,11 @@ export function CustomerList() {
               <tr key={c.id} className="border-b border-slate-700/50">
                 <td className="py-3 text-slate-200">{c.name}</td>
                 <td className="py-3 text-right">
-                  <div className="flex gap-1 justify-end">
-                    <Button variant="ghost" size="sm" onClick={() => setEditingCustomer(c)}>
+                  <div className="flex gap-2 justify-end">
+                    <Button variant="secondary" size="sm" onClick={() => setEditingCustomer(c)}>
                       Edit
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={() => handleToggleActive(c.id, true)} className="text-red-400 hover:text-red-300">
+                    <Button variant="danger" size="sm" onClick={() => handleToggleActive(c.id, true)}>
                       Deactivate
                     </Button>
                   </div>
@@ -96,11 +96,11 @@ export function CustomerList() {
         {activeCustomers.map((c) => (
           <div key={c.id} className="rounded-lg bg-slate-800 border border-slate-700 p-3 flex items-center justify-between">
             <span className="text-slate-200 font-medium">{c.name}</span>
-            <div className="flex gap-1">
-              <Button variant="ghost" size="sm" onClick={() => setEditingCustomer(c)}>
+            <div className="flex gap-2">
+              <Button variant="secondary" size="sm" onClick={() => setEditingCustomer(c)}>
                 Edit
               </Button>
-              <Button variant="ghost" size="sm" onClick={() => handleToggleActive(c.id, true)} className="text-red-400">
+              <Button variant="danger" size="sm" onClick={() => handleToggleActive(c.id, true)}>
                 Deactivate
               </Button>
             </div>
@@ -126,11 +126,11 @@ export function CustomerList() {
                   <tr key={c.id} className="border-b border-slate-700/50">
                     <td className="py-3 text-slate-400">{c.name}</td>
                     <td className="py-3 text-right">
-                      <div className="flex gap-1 justify-end">
-                        <Button variant="ghost" size="sm" onClick={() => setEditingCustomer(c)}>
+                      <div className="flex gap-2 justify-end">
+                        <Button variant="secondary" size="sm" onClick={() => setEditingCustomer(c)}>
                           Edit
                         </Button>
-                        <Button variant="ghost" size="sm" onClick={() => handleToggleActive(c.id, false)} className="text-green-400 hover:text-green-300">
+                        <Button variant="secondary" size="sm" onClick={() => handleToggleActive(c.id, false)}>
                           Activate
                         </Button>
                       </div>
@@ -146,11 +146,11 @@ export function CustomerList() {
             {inactiveCustomers.map((c) => (
               <div key={c.id} className="rounded-lg bg-slate-800 border border-slate-700 p-3 flex items-center justify-between opacity-75">
                 <span className="text-slate-400 font-medium">{c.name}</span>
-                <div className="flex gap-1">
-                  <Button variant="ghost" size="sm" onClick={() => setEditingCustomer(c)}>
+                <div className="flex gap-2">
+                  <Button variant="secondary" size="sm" onClick={() => setEditingCustomer(c)}>
                     Edit
                   </Button>
-                  <Button variant="ghost" size="sm" onClick={() => handleToggleActive(c.id, false)} className="text-green-400">
+                  <Button variant="secondary" size="sm" onClick={() => handleToggleActive(c.id, false)}>
                     Activate
                   </Button>
                 </div>

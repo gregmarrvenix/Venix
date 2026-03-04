@@ -119,19 +119,18 @@ export function RecentExpenses({ refreshKey }: RecentExpensesProps) {
                   </p>
                 )}
               </div>
-              <div className="flex gap-1 ml-2 shrink-0">
+              <div className="flex gap-2 ml-2 shrink-0">
                 <Button
-                  variant="ghost"
+                  variant="secondary"
                   size="sm"
                   onClick={() => setEditingExpense(expense)}
                 >
                   Edit
                 </Button>
                 <Button
-                  variant="ghost"
+                  variant="danger"
                   size="sm"
                   onClick={() => setDeletingId(expense.id)}
-                  className="text-red-400 hover:text-red-300"
                 >
                   Delete
                 </Button>

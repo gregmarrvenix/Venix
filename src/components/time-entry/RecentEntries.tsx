@@ -155,19 +155,18 @@ export function RecentEntries({ refreshKey }: RecentEntriesProps) {
                     {entry.description}
                   </p>
                 </div>
-                <div className="flex gap-1 ml-2 shrink-0">
+                <div className="flex gap-2 ml-2 shrink-0">
                   <Button
-                    variant="ghost"
+                    variant="secondary"
                     size="sm"
                     onClick={() => setEditingEntry(entry)}
                   >
                     Edit
                   </Button>
                   <Button
-                    variant="ghost"
+                    variant="danger"
                     size="sm"
                     onClick={() => setDeletingId(entry.id)}
-                    className="text-red-400 hover:text-red-300"
                   >
                     Delete
                   </Button>

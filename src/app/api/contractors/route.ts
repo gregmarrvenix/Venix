@@ -9,11 +9,15 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { data, error } = await supabase
-    .from("contractors")
-    .select("*")
-    .eq("is_active", true)
-    .order("display_name");
+  const { searchParams } = new URL(request.url);
+  const includeInactive = searchParams.get("include_inactive") === "true";
+
+  let query = supabase.from("contractors").select("*").order("display_name");
+  if (!includeInactive) {
+    query = query.eq("is_active", true);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     console.error("DB error:", error.message);

@@ -91,11 +91,11 @@ export function ProjectList() {
                 <td className="py-3 text-slate-200">{p.name}</td>
                 <td className="py-3 text-slate-400">{p.customer?.name ?? "—"}</td>
                 <td className="py-3 text-right">
-                  <div className="flex gap-1 justify-end">
-                    <Button variant="ghost" size="sm" onClick={() => setEditingProject(p)}>
+                  <div className="flex gap-2 justify-end">
+                    <Button variant="secondary" size="sm" onClick={() => setEditingProject(p)}>
                       Edit
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={() => handleToggleActive(p.id, true)} className="text-red-400 hover:text-red-300">
+                    <Button variant="danger" size="sm" onClick={() => handleToggleActive(p.id, true)}>
                       Deactivate
                     </Button>
                   </div>
@@ -118,11 +118,11 @@ export function ProjectList() {
                 <span className="text-slate-200 font-medium">{p.name}</span>
                 <span className="text-slate-400 text-sm ml-2">{p.customer?.name}</span>
               </div>
-              <div className="flex gap-1">
-                <Button variant="ghost" size="sm" onClick={() => setEditingProject(p)}>
+              <div className="flex gap-2">
+                <Button variant="secondary" size="sm" onClick={() => setEditingProject(p)}>
                   Edit
                 </Button>
-                <Button variant="ghost" size="sm" onClick={() => handleToggleActive(p.id, true)} className="text-red-400">
+                <Button variant="danger" size="sm" onClick={() => handleToggleActive(p.id, true)}>
                   Deactivate
                 </Button>
               </div>
@@ -150,11 +150,11 @@ export function ProjectList() {
                     <td className="py-3 text-slate-400">{p.name}</td>
                     <td className="py-3 text-slate-400">{p.customer?.name ?? "—"}</td>
                     <td className="py-3 text-right">
-                      <div className="flex gap-1 justify-end">
-                        <Button variant="ghost" size="sm" onClick={() => setEditingProject(p)}>
+                      <div className="flex gap-2 justify-end">
+                        <Button variant="secondary" size="sm" onClick={() => setEditingProject(p)}>
                           Edit
                         </Button>
-                        <Button variant="ghost" size="sm" onClick={() => handleToggleActive(p.id, false)} className="text-green-400 hover:text-green-300">
+                        <Button variant="secondary" size="sm" onClick={() => handleToggleActive(p.id, false)}>
                           Activate
                         </Button>
                       </div>
@@ -174,11 +174,11 @@ export function ProjectList() {
                     <span className="text-slate-400 font-medium">{p.name}</span>
                     <span className="text-slate-500 text-sm ml-2">{p.customer?.name}</span>
                   </div>
-                  <div className="flex gap-1">
-                    <Button variant="ghost" size="sm" onClick={() => setEditingProject(p)}>
+                  <div className="flex gap-2">
+                    <Button variant="secondary" size="sm" onClick={() => setEditingProject(p)}>
                       Edit
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={() => handleToggleActive(p.id, false)} className="text-green-400">
+                    <Button variant="secondary" size="sm" onClick={() => handleToggleActive(p.id, false)}>
                       Activate
                     </Button>
                   </div>

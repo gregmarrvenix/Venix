@@ -15,9 +15,9 @@ export async function PUT(
   const { id } = await params;
   const body = await request.json();
 
-  if (!body.display_name && !body.email) {
+  if (!body.display_name && !body.email && body.is_active === undefined) {
     return NextResponse.json(
-      { error: "display_name or email is required" },
+      { error: "display_name, email, or is_active is required" },
       { status: 400 }
     );
   }
@@ -27,6 +27,7 @@ export async function PUT(
   };
   if (body.display_name) updates.display_name = body.display_name;
   if (body.email) updates.email = body.email;
+  if (body.is_active !== undefined) updates.is_active = body.is_active;
 
   const { data, error } = await supabase
     .from("contractors")

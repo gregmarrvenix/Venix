@@ -89,8 +89,13 @@ export function ReportPreview({ filters }: ReportPreviewProps) {
 
       const blob = new Blob([pdfBytes], { type: "application/pdf" });
       const url = URL.createObjectURL(blob);
-      window.open(url, "_blank");
-      toast.success("PDF opened in new tab");
+      const filename = `${filters.customerName || "Unknown"} - ${filters.periodLabel || "Report"} - Timesheet.pdf`;
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("PDF downloaded");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to generate PDF");
     } finally {
