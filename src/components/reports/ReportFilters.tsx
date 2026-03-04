@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useRef, useCallback } from "react";
+import { useState, useMemo, useRef } from "react";
 import { useCustomers } from "@/hooks/useCustomers";
 import { nowAEST } from "@/lib/timezone";
 import { Select } from "@/components/ui/Select";
@@ -53,6 +53,7 @@ export function ReportFilters({ onGenerate }: ReportFiltersProps) {
   const [groupByProject, setGroupByProject] = useState(false);
   const [error, setError] = useState("");
   const hasGenerated = useRef(false);
+  const fetchKeyRef = useRef(0);
 
   const periodOptions = useMemo(() => {
     const options = [];
@@ -67,7 +68,7 @@ export function ReportFilters({ onGenerate }: ReportFiltersProps) {
     return options;
   }, []);
 
-  const submitFilters = useCallback((overrideGroupByProject?: boolean) => {
+  function submitFilters(overrideGroupByProject?: boolean) {
     if (!customerId) {
       setError("Please select a customer");
       return;
@@ -98,6 +99,7 @@ export function ReportFilters({ onGenerate }: ReportFiltersProps) {
     const customer = isAllCustomers ? null : customers.find((c) => c.id === customerId);
     setError("");
     hasGenerated.current = true;
+    fetchKeyRef.current += 1;
     onGenerate({
       customer_id: customerId,
       customerName: isAllCustomers ? "All Customers" : (customer?.name ?? ""),
@@ -105,12 +107,8 @@ export function ReportFilters({ onGenerate }: ReportFiltersProps) {
       to,
       group_by_project: overrideGroupByProject ?? groupByProject,
       periodLabel,
-      _fetchKey: Date.now(),
+      _fetchKey: fetchKeyRef.current,
     });
-  }, [customerId, period, customFrom, customTo, groupByProject, customers, onGenerate]);
-
-  function handleGenerate() {
-    submitFilters();
   }
 
   const customerOptions = [
@@ -171,7 +169,7 @@ export function ReportFilters({ onGenerate }: ReportFiltersProps) {
 
       {error && <p className="text-sm text-red-400">{error}</p>}
 
-      <Button onClick={handleGenerate} className="w-full">
+      <Button onClick={() => submitFilters()} className="w-full">
         View Report
       </Button>
     </div>
