@@ -85,7 +85,7 @@ export function generateTimeReport(options: PdfOptions): ArrayBuffer {
         head: [["Date", "Project", "Start", "Finish", "Hours", "Contractor", "Description"]],
         body: rows,
         theme: "grid",
-        headStyles: { fillColor: [99, 102, 241] },
+        headStyles: { fillColor: [99, 102, 241], halign: "center" },
         styles: { fontSize: 8 },
         columnStyles: {
           0: { cellWidth: 22 },
@@ -150,7 +150,7 @@ export function generateTimeReport(options: PdfOptions): ArrayBuffer {
         head: [["Date", "Project", "Start", "Finish", "Hours", "Contractor", "Description"]],
         body: rows,
         theme: "grid",
-        headStyles: { fillColor: [99, 102, 241] },
+        headStyles: { fillColor: [99, 102, 241], halign: "center" },
         styles: { fontSize: 8 },
         columnStyles: {
           0: { cellWidth: 22 },
@@ -316,7 +316,7 @@ export function generateExpenseReport(options: ExpensePdfOptions): ArrayBuffer {
         head: [headRow],
         body: custExpenses.map(expenseRow),
         theme: "grid",
-        headStyles: { fillColor: [99, 102, 241] },
+        headStyles: { fillColor: [99, 102, 241], halign: "center" },
         styles: { fontSize: 8 },
         columnStyles: colStyles,
       });
@@ -359,7 +359,7 @@ export function generateExpenseReport(options: ExpensePdfOptions): ArrayBuffer {
         head: [headRow],
         body: projectExpenses.map(expenseRow),
         theme: "grid",
-        headStyles: { fillColor: [99, 102, 241] },
+        headStyles: { fillColor: [99, 102, 241], halign: "center" },
         styles: { fontSize: 8 },
         columnStyles: colStyles,
       });
