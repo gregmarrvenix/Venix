@@ -34,11 +34,6 @@ export function generateTimeReport(options: PdfOptions): ArrayBuffer {
   const titleX = logoPng ? 48 : 14;
   doc.text("Job Summary", titleX, 18);
 
-  doc.setFontSize(9);
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(200, 200, 210);
-  doc.text(`Generated ${new Date().toLocaleDateString("en-AU")}`, titleX, 26);
-
   // Reset text color
   doc.setTextColor(31, 41, 55);
 
@@ -264,11 +259,6 @@ export function generateExpenseReport(options: ExpensePdfOptions): ArrayBuffer {
   doc.setTextColor(255, 255, 255);
   const titleX = logoPng ? 48 : 14;
   doc.text("Expense Summary", titleX, 18);
-
-  doc.setFontSize(9);
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(200, 200, 210);
-  doc.text(`Generated ${new Date().toLocaleDateString("en-AU")}`, titleX, 26);
 
   // Reset text color
   doc.setTextColor(31, 41, 55);
