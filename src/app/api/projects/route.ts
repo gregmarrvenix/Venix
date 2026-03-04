@@ -13,13 +13,17 @@ export async function GET(request: Request) {
   const customerId = searchParams.get("customer_id");
   const includeInactive = searchParams.get("include_inactive") === "true";
 
+  const select = includeInactive
+    ? "*, customer:customers(*)"
+    : "*, customer:customers!inner(*)";
+
   let query = supabase
     .from("projects")
-    .select("*, customer:customers(*)")
+    .select(select)
     .order("name");
 
   if (!includeInactive) {
-    query = query.eq("is_active", true);
+    query = query.eq("is_active", true).eq("customer.is_active", true);
   }
   if (customerId) {
     query = query.eq("customer_id", customerId);
