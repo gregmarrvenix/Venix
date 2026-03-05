@@ -104,14 +104,20 @@ export function ExpenseReportPreview({ filters }: ExpenseReportPreviewProps) {
     }
   }
 
-  const filtered = filters.contractor_ids && filters.contractor_ids.length > 0
+  const afterContractor = filters.contractor_ids && filters.contractor_ids.length > 0
     ? expenses.filter((e) => filters.contractor_ids.includes(e.contractor_id))
     : expenses;
 
-  const isAllCustomers = filters.customer_id === "__all__";
+  const filtered = filters.customer_ids && filters.customer_ids.length > 0
+    ? afterContractor.filter((e) => filters.customer_ids.includes(e.customer_id))
+    : afterContractor;
+
+  const isAllCustomers = filters.customer_id === "__all__" && (!filters.customer_ids || filters.customer_ids.length === 0);
   const groupByProject = filters.group_by_project ?? false;
 
-  const customerGrouped = isAllCustomers
+  const isMultiCustomer = !isAllCustomers && filters.customer_ids && filters.customer_ids.length > 1;
+
+  const customerGrouped = (isAllCustomers || isMultiCustomer)
     ? groupByCustomerFn(filtered)
     : null;
 
@@ -154,7 +160,7 @@ export function ExpenseReportPreview({ filters }: ExpenseReportPreviewProps) {
         </div>
       ) : filtered.length === 0 ? (
         <div className="py-8 text-center text-slate-400">No expenses found for this period</div>
-      ) : isAllCustomers && customerGrouped ? (
+      ) : (isAllCustomers || isMultiCustomer) && customerGrouped ? (
         <div className="space-y-6">
           {customerGrouped.map(({ customerName, expenses: custExpenses, total }) => (
             <div key={customerName}>

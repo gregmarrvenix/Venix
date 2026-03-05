@@ -26,7 +26,8 @@ export async function GET(request: Request) {
     query = query.eq("is_active", true).eq("customer.is_active", true);
   }
   if (customerId) {
-    query = query.eq("customer_id", customerId);
+    const ids = customerId.split(",").filter(Boolean);
+    query = ids.length === 1 ? query.eq("customer_id", ids[0]) : query.in("customer_id", ids);
   }
 
   const { data, error } = await query;

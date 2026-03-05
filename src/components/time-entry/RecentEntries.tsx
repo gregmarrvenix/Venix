@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useTimeEntries } from "@/hooks/useTimeEntries";
 import { useContractors } from "@/hooks/useContractors";
 import { useCustomers } from "@/hooks/useCustomers";
@@ -10,6 +10,8 @@ import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
 import { useToast } from "@/components/ui/Toast";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { TimeEntryForm } from "./TimeEntryForm";
 import type { TimeEntry } from "@/lib/types";
 
@@ -22,14 +24,81 @@ export function RecentEntries({ refreshKey }: RecentEntriesProps) {
   const { contractors, loading: contractorsLoading } = useContractors();
   const { customers, loading: customersLoading } = useCustomers();
   const toast = useToast();
-  const [filterContractorId, setFilterContractorId] = useState(contractorId);
-  const [filterCustomerId, setFilterCustomerId] = useState("");
+  const [selectedContractorIds, setSelectedContractorIds] = useState<string[]>([contractorId]);
+  const [selectedCustomerIds, setSelectedCustomerIds] = useState<string[]>([]);
   const [pageSize, setPageSize] = useState("50");
 
+  const activeContractors = useMemo(
+    () => contractors.filter((c) => c.is_active),
+    [contractors]
+  );
+
+  const activeCustomers = useMemo(
+    () => customers.filter((c) => c.is_active),
+    [customers]
+  );
+
+  const isAllContractors = selectedContractorIds.length === 0;
+  const isAllCustomers = selectedCustomerIds.length === 0;
+
+  function toggleAllContractors() {
+    if (isAllContractors) {
+      setSelectedContractorIds(["__none__"]);
+    } else {
+      setSelectedContractorIds([]);
+    }
+  }
+
+  function toggleContractor(id: string) {
+    if (isAllContractors) {
+      setSelectedContractorIds([id]);
+      return;
+    }
+    setSelectedContractorIds((prev) => {
+      const next = prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id];
+      if (next.length === activeContractors.length && activeContractors.every((c) => next.includes(c.id))) {
+        return [];
+      }
+      if (next.length === 0 || (next.length === 1 && next[0] === "__none__")) {
+        return ["__none__"];
+      }
+      return next.filter((x) => x !== "__none__");
+    });
+  }
+
+  function toggleAllCustomers() {
+    if (isAllCustomers) {
+      setSelectedCustomerIds(["__none__"]);
+    } else {
+      setSelectedCustomerIds([]);
+    }
+  }
+
+  function toggleCustomer(id: string) {
+    if (isAllCustomers) {
+      setSelectedCustomerIds([id]);
+      return;
+    }
+    setSelectedCustomerIds((prev) => {
+      const next = prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id];
+      if (next.length === activeCustomers.length && activeCustomers.every((c) => next.includes(c.id))) {
+        return [];
+      }
+      if (next.length === 0 || (next.length === 1 && next[0] === "__none__")) {
+        return ["__none__"];
+      }
+      return next.filter((x) => x !== "__none__");
+    });
+  }
+
+  // Map selection state to hook params
+  const contractorIdsParam = isAllContractors ? [] : selectedContractorIds.filter((x) => x !== "__none__");
+  const customerIdsParam = isAllCustomers ? [] : selectedCustomerIds.filter((x) => x !== "__none__");
+
   const { entries, loading, update, remove, refresh } = useTimeEntries({
-    contractorId: filterContractorId,
+    contractorIds: contractorIdsParam,
+    customerIds: customerIdsParam,
     limit: parseInt(pageSize, 10),
-    customerId: filterCustomerId || undefined,
   });
 
   useEffect(() => {
@@ -70,15 +139,7 @@ export function RecentEntries({ refreshKey }: RecentEntriesProps) {
     }
   }
 
-  const contractorOptions = [
-    { value: "__all__", label: "All Contractors" },
-    ...contractors.map((c) => ({ value: c.id, label: c.display_name })),
-  ];
-
-  const customerOptions = [
-    { value: "", label: "All Customers" },
-    ...customers.map((c) => ({ value: c.id, label: c.name })),
-  ];
+  const showContractorName = isAllContractors || selectedContractorIds.length > 1;
 
   const pageSizeOptions = [
     { value: "50", label: "50 entries" },
@@ -89,24 +150,52 @@ export function RecentEntries({ refreshKey }: RecentEntriesProps) {
   return (
     <>
       <div className="mb-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <Select
-          label="Contractor"
-          value={filterContractorId}
-          onChange={(e) => setFilterContractorId(e.target.value)}
-          options={[
-            ...(contractorsLoading ? [{ value: "", label: "Loading..." }] : []),
-            ...contractorOptions,
-          ]}
-        />
-        <Select
-          label="Customer"
-          value={filterCustomerId}
-          onChange={(e) => setFilterCustomerId(e.target.value)}
-          options={[
-            ...(customersLoading ? [{ value: "", label: "Loading..." }] : []),
-            ...customerOptions,
-          ]}
-        />
+        <div>
+          <label className="block text-sm text-slate-400 mb-2">Contractors</label>
+          <ScrollArea className="rounded-lg border border-slate-700 bg-slate-900 p-3 max-h-40">
+            <div className="space-y-1.5">
+              <label className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
+                <Checkbox
+                  checked={isAllContractors}
+                  onCheckedChange={toggleAllContractors}
+                />
+                {contractorsLoading ? "Loading..." : "All Contractors"}
+              </label>
+              {activeContractors.map((c) => (
+                <label key={c.id} className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
+                  <Checkbox
+                    checked={isAllContractors || selectedContractorIds.includes(c.id)}
+                    onCheckedChange={() => toggleContractor(c.id)}
+                  />
+                  {c.display_name}
+                </label>
+              ))}
+            </div>
+          </ScrollArea>
+        </div>
+        <div>
+          <label className="block text-sm text-slate-400 mb-2">Customers</label>
+          <ScrollArea className="rounded-lg border border-slate-700 bg-slate-900 p-3 max-h-40">
+            <div className="space-y-1.5">
+              <label className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
+                <Checkbox
+                  checked={isAllCustomers}
+                  onCheckedChange={toggleAllCustomers}
+                />
+                {customersLoading ? "Loading..." : "All Customers"}
+              </label>
+              {activeCustomers.map((c) => (
+                <label key={c.id} className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
+                  <Checkbox
+                    checked={isAllCustomers || selectedCustomerIds.includes(c.id)}
+                    onCheckedChange={() => toggleCustomer(c.id)}
+                  />
+                  {c.name}
+                </label>
+              ))}
+            </div>
+          </ScrollArea>
+        </div>
         <Select
           label="Show"
           value={pageSize}
@@ -146,7 +235,7 @@ export function RecentEntries({ refreshKey }: RecentEntriesProps) {
                     </span>
                   </div>
                   <div className="mt-1 text-sm font-medium text-slate-200">
-                    {filterContractorId === "__all__" && entry.contractor?.display_name && (
+                    {showContractorName && entry.contractor?.display_name && (
                       <span className="text-purple-400">{entry.contractor.display_name} — </span>
                     )}
                     {entry.customer?.name} / {entry.project?.name}

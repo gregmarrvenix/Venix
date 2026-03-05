@@ -12,6 +12,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 
 export interface ReportFilterValues {
   customer_id: string;
+  customer_ids: string[];
   customerName: string;
   from: string;
   to: string;
@@ -52,7 +53,7 @@ function getMonthName(monthsBack: number): string {
 export function ReportFilters({ onGenerate, activeTab }: ReportFiltersProps) {
   const { customers, loading: customersLoading } = useCustomers();
   const { contractors, loading: contractorsLoading } = useContractors();
-  const [customerId, setCustomerId] = useState("");
+  const [selectedCustomerIds, setSelectedCustomerIds] = useState<string[]>([]);
   const [period, setPeriod] = useState("1");
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
@@ -61,6 +62,40 @@ export function ReportFilters({ onGenerate, activeTab }: ReportFiltersProps) {
   const [error, setError] = useState("");
   const hasGenerated = useRef(false);
   const fetchKeyRef = useRef(0);
+
+  const activeCustomers = useMemo(
+    () => customers.filter((c) => c.is_active),
+    [customers]
+  );
+
+  const isAllCustomers = selectedCustomerIds.length === 0;
+
+  function toggleAllCustomers() {
+    if (isAllCustomers) {
+      setSelectedCustomerIds(["__none__"]);
+    } else {
+      setSelectedCustomerIds([]);
+    }
+    setError("");
+  }
+
+  function toggleCustomer(id: string) {
+    setError("");
+    if (isAllCustomers) {
+      setSelectedCustomerIds([id]);
+      return;
+    }
+    setSelectedCustomerIds((prev) => {
+      const next = prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id];
+      if (next.length === activeCustomers.length && activeCustomers.every((c) => next.includes(c.id))) {
+        return [];
+      }
+      if (next.length === 0 || (next.length === 1 && next[0] === "__none__")) {
+        return ["__none__"];
+      }
+      return next.filter((x) => x !== "__none__");
+    });
+  }
 
   const periodOptions = useMemo(() => {
     const options = [];
@@ -113,12 +148,11 @@ export function ReportFilters({ onGenerate, activeTab }: ReportFiltersProps) {
   }
 
   function submitFilters(overrideGroupByProject?: boolean) {
-    if (!customerId) {
-      setError("Please select a customer");
+    const realCustomerIds = selectedCustomerIds.filter((x) => x !== "__none__");
+    if (selectedCustomerIds.includes("__none__") || (!isAllCustomers && realCustomerIds.length === 0)) {
+      setError("Please select at least one customer");
       return;
     }
-
-    const isAllCustomers = customerId === "__all__";
 
     let from: string;
     let to: string;
@@ -140,13 +174,22 @@ export function ReportFilters({ onGenerate, activeTab }: ReportFiltersProps) {
       periodLabel = range.label;
     }
 
-    const customer = isAllCustomers ? null : customers.find((c) => c.id === customerId);
+    let customerName: string;
+    if (isAllCustomers) {
+      customerName = "All Customers";
+    } else if (realCustomerIds.length === 1) {
+      customerName = customers.find((c) => c.id === realCustomerIds[0])?.name ?? "";
+    } else {
+      customerName = `${realCustomerIds.length} Customers`;
+    }
+
     setError("");
     hasGenerated.current = true;
     fetchKeyRef.current += 1;
     onGenerate({
-      customer_id: customerId,
-      customerName: isAllCustomers ? "All Customers" : (customer?.name ?? ""),
+      customer_id: isAllCustomers ? "__all__" : (realCustomerIds.length === 1 ? realCustomerIds[0] : "__all__"),
+      customer_ids: realCustomerIds,
+      customerName,
       from,
       to,
       group_by_project: overrideGroupByProject ?? groupByProject,
@@ -156,23 +199,32 @@ export function ReportFilters({ onGenerate, activeTab }: ReportFiltersProps) {
     });
   }
 
-  const customerOptions = [
-    { value: "__all__", label: "All Customers" },
-    ...customers.map((c) => ({ value: c.id, label: c.name })),
-  ];
-
   return (
     <div className="space-y-4">
-      <Select
-        label="Customer"
-        value={customerId}
-        onChange={(e) => {
-          setCustomerId(e.target.value);
-          setError("");
-        }}
-        options={[{ value: "", label: customersLoading ? "Loading..." : "Select customer" }, ...customerOptions]}
-        error={!customerId && error ? error : undefined}
-      />
+      <div>
+        <label className="block text-sm text-slate-400 mb-2">Customers</label>
+        <ScrollArea className="rounded-lg border border-slate-700 bg-slate-900 p-3 max-h-40">
+          <div className="space-y-1.5">
+            <label className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
+              <Checkbox
+                checked={isAllCustomers}
+                onCheckedChange={toggleAllCustomers}
+              />
+              {customersLoading ? "Loading..." : "All Customers"}
+            </label>
+            {activeCustomers.map((c) => (
+              <label key={c.id} className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
+                <Checkbox
+                  checked={isAllCustomers || selectedCustomerIds.includes(c.id)}
+                  onCheckedChange={() => toggleCustomer(c.id)}
+                />
+                {c.name}
+              </label>
+            ))}
+          </div>
+        </ScrollArea>
+        {error && error.includes("customer") && <p className="mt-1 text-sm text-red-400">{error}</p>}
+      </div>
 
       <Select
         label="Time Period"

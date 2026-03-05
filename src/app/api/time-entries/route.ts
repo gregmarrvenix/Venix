@@ -12,8 +12,7 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url);
   const contractorParam = searchParams.get("contractor_id");
-  const contractorId = contractorParam === "__all__" ? null : (contractorParam ?? user.contractor_id);
-  const customerId = searchParams.get("customer_id");
+  const customerParam = searchParams.get("customer_id");
   const from = searchParams.get("from");
   const to = searchParams.get("to");
   const limitParam = parseInt(searchParams.get("limit") ?? "50", 10);
@@ -28,11 +27,15 @@ export async function GET(request: Request) {
     .order("start_time", { ascending: false })
     .limit(limit);
 
-  if (contractorId) {
-    query = query.eq("contractor_id", contractorId);
+  if (contractorParam && contractorParam !== "__all__") {
+    const ids = contractorParam.split(",").filter(Boolean);
+    query = ids.length === 1 ? query.eq("contractor_id", ids[0]) : query.in("contractor_id", ids);
+  } else if (!contractorParam) {
+    query = query.eq("contractor_id", user.contractor_id);
   }
-  if (customerId) {
-    query = query.eq("customer_id", customerId);
+  if (customerParam && customerParam !== "__all__") {
+    const ids = customerParam.split(",").filter(Boolean);
+    query = ids.length === 1 ? query.eq("customer_id", ids[0]) : query.in("customer_id", ids);
   }
   if (from) {
     query = query.gte("entry_date", from);

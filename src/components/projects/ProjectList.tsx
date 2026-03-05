@@ -4,20 +4,55 @@ import { useState, useMemo } from "react";
 import { useCustomers } from "@/hooks/useCustomers";
 import { useProjects } from "@/hooks/useProjects";
 import { Modal } from "@/components/ui/Modal";
-import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { ProjectForm } from "./ProjectForm";
 import type { Project } from "@/lib/types";
 
 export function ProjectList() {
   const { customers } = useCustomers();
-  const [filterCustomerId, setFilterCustomerId] = useState("");
+  const [selectedCustomerIds, setSelectedCustomerIds] = useState<string[]>([]);
+
+  const activeCustomers = useMemo(
+    () => customers.filter((c) => c.is_active),
+    [customers]
+  );
+
+  const isAllCustomers = selectedCustomerIds.length === 0;
+  const realCustomerIds = selectedCustomerIds.filter((x) => x !== "__none__");
+
+  function toggleAllCustomers() {
+    if (isAllCustomers) {
+      setSelectedCustomerIds(["__none__"]);
+    } else {
+      setSelectedCustomerIds([]);
+    }
+  }
+
+  function toggleCustomer(id: string) {
+    if (isAllCustomers) {
+      setSelectedCustomerIds([id]);
+      return;
+    }
+    setSelectedCustomerIds((prev) => {
+      const next = prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id];
+      if (next.length === activeCustomers.length && activeCustomers.every((c) => next.includes(c.id))) {
+        return [];
+      }
+      if (next.length === 0 || (next.length === 1 && next[0] === "__none__")) {
+        return ["__none__"];
+      }
+      return next.filter((x) => x !== "__none__");
+    });
+  }
+
   const { projects, loading, create, update, refresh } = useProjects({
-    customerId: filterCustomerId || undefined,
+    customerIds: isAllCustomers ? [] : realCustomerIds,
     includeInactive: true,
   });
   const toast = useToast();
@@ -50,7 +85,7 @@ export function ProjectList() {
     }
   }
 
-  const customerOptions = customers.map((c) => ({ value: c.id, label: c.name }));
+  const [showFilter, setShowFilter] = useState(false);
 
   if (loading) {
     return (
@@ -66,17 +101,40 @@ export function ProjectList() {
     <>
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
         <h2 className="text-lg font-semibold text-slate-200">Active Projects</h2>
-        <div className="flex gap-2 items-center w-full sm:w-auto">
-          <Select
-            value={filterCustomerId}
-            onChange={(e) => setFilterCustomerId(e.target.value)}
-            options={[{ value: "", label: "All Customers" }, ...customerOptions]}
-          />
+        <div className="flex gap-2 items-center">
+          <Button variant="secondary" size="sm" onClick={() => setShowFilter((v) => !v)}>
+            {isAllCustomers ? "All Customers" : `${realCustomerIds.length} Customer${realCustomerIds.length === 1 ? "" : "s"}`}
+          </Button>
           <Button size="sm" onClick={() => setShowCreate(true)}>
             Add Project
           </Button>
         </div>
       </div>
+
+      {showFilter && (
+        <div className="mb-4">
+          <ScrollArea className="rounded-lg border border-slate-700 bg-slate-900 p-3 max-h-40">
+            <div className="space-y-1.5">
+              <label className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
+                <Checkbox
+                  checked={isAllCustomers}
+                  onCheckedChange={toggleAllCustomers}
+                />
+                All Customers
+              </label>
+              {activeCustomers.map((c) => (
+                <label key={c.id} className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
+                  <Checkbox
+                    checked={isAllCustomers || selectedCustomerIds.includes(c.id)}
+                    onCheckedChange={() => toggleCustomer(c.id)}
+                  />
+                  {c.name}
+                </label>
+              ))}
+            </div>
+          </ScrollArea>
+        </div>
+      )}
 
       {/* Active projects — Desktop table */}
       <div className="hidden md:block">

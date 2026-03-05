@@ -5,16 +5,26 @@ import { apiFetch } from "@/lib/api-client";
 import type { TimeEntry } from "@/lib/types";
 
 interface UseTimeEntriesOptions {
-  contractorId: string;
+  contractorId?: string;
+  contractorIds?: string[];
   from?: string;
   to?: string;
   limit?: number;
   customerId?: string;
+  customerIds?: string[];
 }
 
-export function useTimeEntries({ contractorId, from, to, limit = 50, customerId }: UseTimeEntriesOptions) {
+export function useTimeEntries({ contractorId, contractorIds, from, to, limit = 50, customerId, customerIds }: UseTimeEntriesOptions) {
   const [entries, setEntries] = useState<TimeEntry[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Resolve to a single API param value
+  const contractorParam = contractorIds
+    ? (contractorIds.length === 0 ? "__all__" : contractorIds.join(","))
+    : (contractorId ?? "");
+  const customerParam = customerIds
+    ? (customerIds.length === 0 ? "__all__" : customerIds.join(","))
+    : (customerId ?? "");
 
   const fetchEntries = useCallback(async () => {
     setLoading(true);
@@ -23,11 +33,11 @@ export function useTimeEntries({ contractorId, from, to, limit = 50, customerId 
       if (from) params.set("from", from);
       if (to) params.set("to", to);
       params.set("limit", String(limit));
-      if (contractorId) {
-        params.set("contractor_id", contractorId);
+      if (contractorParam) {
+        params.set("contractor_id", contractorParam);
       }
-      if (customerId) {
-        params.set("customer_id", customerId);
+      if (customerParam) {
+        params.set("customer_id", customerParam);
       }
       const data = await apiFetch<TimeEntry[]>(`/api/time-entries?${params}`);
       setEntries(data);
@@ -36,7 +46,7 @@ export function useTimeEntries({ contractorId, from, to, limit = 50, customerId 
     } finally {
       setLoading(false);
     }
-  }, [contractorId, from, to, limit, customerId]);
+  }, [contractorParam, customerParam, from, to, limit]);
 
   useEffect(() => {
     fetchEntries();

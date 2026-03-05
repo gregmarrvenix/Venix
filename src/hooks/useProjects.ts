@@ -7,6 +7,7 @@ import type { Project } from "@/lib/types";
 
 interface UseProjectsOptions {
   customerId?: string;
+  customerIds?: string[];
   includeInactive?: boolean;
 }
 
@@ -16,7 +17,11 @@ function cacheKey(customerId?: string, includeInactive?: boolean) {
 }
 
 export function useProjects(customerIdOrOptions?: string | UseProjectsOptions) {
-  const customerId = typeof customerIdOrOptions === "string" ? customerIdOrOptions : customerIdOrOptions?.customerId;
+  const rawCustomerId = typeof customerIdOrOptions === "string" ? customerIdOrOptions : customerIdOrOptions?.customerId;
+  const customerIds = typeof customerIdOrOptions === "object" ? customerIdOrOptions?.customerIds : undefined;
+  const customerId = customerIds
+    ? (customerIds.length === 0 ? undefined : customerIds.join(","))
+    : rawCustomerId;
   const includeInactive = typeof customerIdOrOptions === "object" ? (customerIdOrOptions?.includeInactive ?? false) : false;
   const key = cacheKey(customerId, includeInactive);
 
