@@ -9,6 +9,8 @@ import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { ProjectPicker } from "@/components/ui/ProjectPicker";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import type { Expense } from "@/lib/types";
 
 interface ExpenseFormProps {
@@ -131,21 +133,19 @@ export function ExpenseForm({ onSubmit, initialData }: ExpenseFormProps) {
         <label className="block text-sm text-slate-400 mb-1">
           Description
         </label>
-        <textarea
+        <Textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           rows={3}
-          className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus:outline-none"
+          className="border-slate-700 bg-slate-900 text-sm text-slate-200 placeholder-slate-500"
           placeholder="What was this expense for?"
         />
       </div>
 
-      <label className="flex items-center gap-2 cursor-pointer">
-        <input
-          type="checkbox"
+      <label className="flex items-center gap-3 cursor-pointer">
+        <Switch
           checked={isBillable}
-          onChange={(e) => setIsBillable(e.target.checked)}
-          className="h-4 w-4 rounded border-slate-700 bg-slate-900 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-0"
+          onCheckedChange={setIsBillable}
         />
         <span className="text-sm text-slate-300">Billable</span>
       </label>

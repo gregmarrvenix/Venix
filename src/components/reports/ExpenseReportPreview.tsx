@@ -6,6 +6,7 @@ import { formatDate } from "@/lib/timezone";
 import { generateExpenseReport } from "@/lib/pdf-generator";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import type { ReportFilterValues } from "./ReportFilters";
 import type { Expense } from "@/lib/types";
 
@@ -186,32 +187,30 @@ export function ExpenseReportPreview({ filters }: ExpenseReportPreviewProps) {
 
 function ExpenseTable({ expenses }: { expenses: Expense[] }) {
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-slate-700 text-left text-xs text-slate-400">
-            <th className="pb-2 pr-3">Date</th>
-            <th className="pb-2 pr-3">Project</th>
-            <th className="pb-2 pr-3">Amount</th>
-            <th className="pb-2 pr-3">Billable</th>
-            <th className="pb-2 pr-3">Contractor</th>
-            <th className="pb-2">Description</th>
-          </tr>
-        </thead>
-        <tbody>
-          {expenses.map((e) => (
-            <tr key={e.id} className="border-b border-slate-700/50">
-              <td className="py-2 pr-3 text-slate-300 whitespace-nowrap">{formatDate(e.expense_date)}</td>
-              <td className="py-2 pr-3 text-slate-300">{e.project?.name}</td>
-              <td className="py-2 pr-3 text-indigo-400">${Number(e.amount).toFixed(2)}</td>
-              <td className="py-2 pr-3 text-slate-300">{e.is_billable ? "Yes" : "No"}</td>
-              <td className="py-2 pr-3 text-slate-300">{e.contractor?.display_name}</td>
-              <td className="py-2 text-slate-400 truncate max-w-[200px]">{e.description}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <Table>
+      <TableHeader>
+        <TableRow className="border-slate-700">
+          <TableHead className="text-xs text-slate-400">Date</TableHead>
+          <TableHead className="text-xs text-slate-400">Project</TableHead>
+          <TableHead className="text-xs text-slate-400">Amount</TableHead>
+          <TableHead className="text-xs text-slate-400">Billable</TableHead>
+          <TableHead className="text-xs text-slate-400">Contractor</TableHead>
+          <TableHead className="text-xs text-slate-400">Description</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {expenses.map((e) => (
+          <TableRow key={e.id} className="border-slate-700/50">
+            <TableCell className="text-slate-300">{formatDate(e.expense_date)}</TableCell>
+            <TableCell className="text-slate-300">{e.project?.name}</TableCell>
+            <TableCell className="text-indigo-400">${Number(e.amount).toFixed(2)}</TableCell>
+            <TableCell className="text-slate-300">{e.is_billable ? "Yes" : "No"}</TableCell>
+            <TableCell className="text-slate-300">{e.contractor?.display_name}</TableCell>
+            <TableCell className="text-slate-400 truncate max-w-[200px]">{e.description}</TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
   );
 }
 

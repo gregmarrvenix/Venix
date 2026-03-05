@@ -7,6 +7,8 @@ import { todayAEST, formatDate } from "@/lib/timezone";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ExpenseForm } from "./ExpenseForm";
 import type { Expense } from "@/lib/types";
 
@@ -73,10 +75,10 @@ export function RecentExpenses({ refreshKey }: RecentExpensesProps) {
     return (
       <div className="space-y-3">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="animate-pulse rounded-lg bg-slate-800 border border-slate-700 p-4">
-            <div className="h-4 bg-slate-700 rounded w-1/3 mb-2" />
-            <div className="h-3 bg-slate-700 rounded w-1/2 mb-2" />
-            <div className="h-3 bg-slate-700 rounded w-2/3" />
+          <div key={i} className="rounded-lg bg-slate-800 border border-slate-700 p-4">
+            <Skeleton className="h-4 bg-slate-700 rounded w-1/3 mb-2" />
+            <Skeleton className="h-3 bg-slate-700 rounded w-1/2 mb-2" />
+            <Skeleton className="h-3 bg-slate-700 rounded w-2/3" />
           </div>
         ))}
       </div>
@@ -105,9 +107,9 @@ export function RecentExpenses({ refreshKey }: RecentExpensesProps) {
                     ${Number(expense.amount).toFixed(2)}
                   </span>
                   {expense.is_billable && (
-                    <span className="rounded-full bg-indigo-500/20 px-2 py-0.5 text-xs text-indigo-300">
+                    <Badge variant="secondary" className="bg-indigo-500/20 text-indigo-300 border-transparent">
                       Billable
-                    </span>
+                    </Badge>
                   )}
                 </div>
                 <div className="mt-1 text-sm font-medium text-slate-200">

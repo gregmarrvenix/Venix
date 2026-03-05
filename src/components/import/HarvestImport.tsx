@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { DatePicker } from "@/components/ui/DatePicker";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import type {
   HarvestTimeEntry,
   ClientMapping,
@@ -755,32 +756,32 @@ export function HarvestImport() {
           </div>
 
           <div className="max-h-80 overflow-auto rounded-lg border border-slate-700">
-            <table className="w-full text-left text-xs">
-              <thead className="sticky top-0 bg-slate-800 text-slate-400">
-                <tr>
-                  <th className="px-3 py-2">Date</th>
-                  <th className="px-3 py-2">Start</th>
-                  <th className="px-3 py-2">End</th>
-                  <th className="px-3 py-2">Customer</th>
-                  <th className="px-3 py-2">Project</th>
-                  <th className="px-3 py-2">Description</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-700">
+            <Table>
+              <TableHeader className="sticky top-0 bg-slate-800">
+                <TableRow className="border-slate-700">
+                  <TableHead className="text-xs text-slate-400">Date</TableHead>
+                  <TableHead className="text-xs text-slate-400">Start</TableHead>
+                  <TableHead className="text-xs text-slate-400">End</TableHead>
+                  <TableHead className="text-xs text-slate-400">Customer</TableHead>
+                  <TableHead className="text-xs text-slate-400">Project</TableHead>
+                  <TableHead className="text-xs text-slate-400">Description</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {previewEntries.map((row, i) => (
-                  <tr key={i} className="text-slate-300">
-                    <td className="whitespace-nowrap px-3 py-2">{row.date}</td>
-                    <td className="whitespace-nowrap px-3 py-2">{row.start}</td>
-                    <td className="whitespace-nowrap px-3 py-2">{row.end}</td>
-                    <td className="px-3 py-2">{row.customer}</td>
-                    <td className="px-3 py-2">{row.project}</td>
-                    <td className="max-w-xs truncate px-3 py-2">
+                  <TableRow key={i} className="border-slate-700 text-slate-300">
+                    <TableCell>{row.date}</TableCell>
+                    <TableCell>{row.start}</TableCell>
+                    <TableCell>{row.end}</TableCell>
+                    <TableCell>{row.customer}</TableCell>
+                    <TableCell>{row.project}</TableCell>
+                    <TableCell className="max-w-xs truncate">
                       {row.description}
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
           {entries.length > 50 && (
             <p className="text-xs text-slate-500">
@@ -797,18 +798,18 @@ export function HarvestImport() {
                 </p>
               </div>
               <div className="max-h-60 overflow-auto rounded-lg border border-slate-700">
-                <table className="w-full text-left text-xs">
-                  <thead className="sticky top-0 bg-slate-800 text-slate-400">
-                    <tr>
-                      <th className="px-3 py-2">Date</th>
-                      <th className="px-3 py-2">Original</th>
-                      <th className="px-3 py-2">Start</th>
-                      <th className="px-3 py-2">End</th>
-                      <th className="px-3 py-2">Client / Project</th>
-                      <th className="px-3 py-2">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-700">
+                <Table>
+                  <TableHeader className="sticky top-0 bg-slate-800">
+                    <TableRow className="border-slate-700">
+                      <TableHead className="text-xs text-slate-400">Date</TableHead>
+                      <TableHead className="text-xs text-slate-400">Original</TableHead>
+                      <TableHead className="text-xs text-slate-400">Start</TableHead>
+                      <TableHead className="text-xs text-slate-400">End</TableHead>
+                      <TableHead className="text-xs text-slate-400">Client / Project</TableHead>
+                      <TableHead className="text-xs text-slate-400">Action</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                     {invalidEntries.map((e) => {
                       const override = timeOverrides.get(e.id);
                       const parsedStart = e.started_time ? parseHarvestTime(e.started_time) : "00:00";
@@ -817,12 +818,12 @@ export function HarvestImport() {
                       const currentEnd = override?.end ?? parsedEnd;
 
                       return (
-                        <tr key={e.id} className="text-slate-300">
-                          <td className="whitespace-nowrap px-3 py-2">{e.spent_date}</td>
-                          <td className="whitespace-nowrap px-3 py-2 text-slate-500">
+                        <TableRow key={e.id} className="border-slate-700 text-slate-300">
+                          <TableCell>{e.spent_date}</TableCell>
+                          <TableCell className="text-slate-500">
                             {e.started_time ?? "-"} → {e.ended_time ?? "-"}
-                          </td>
-                          <td className="px-2 py-1">
+                          </TableCell>
+                          <TableCell className="px-2 py-1">
                             <input
                               type="time"
                               value={currentStart}
@@ -835,8 +836,8 @@ export function HarvestImport() {
                               }}
                               className="w-24 rounded border border-slate-600 bg-slate-900 px-2 py-1 text-xs text-slate-200 focus:border-indigo-500 focus:outline-none"
                             />
-                          </td>
-                          <td className="px-2 py-1">
+                          </TableCell>
+                          <TableCell className="px-2 py-1">
                             <input
                               type="time"
                               value={currentEnd}
@@ -849,22 +850,22 @@ export function HarvestImport() {
                               }}
                               className="w-24 rounded border border-slate-600 bg-slate-900 px-2 py-1 text-xs text-slate-200 focus:border-indigo-500 focus:outline-none"
                             />
-                          </td>
-                          <td className="px-3 py-2 text-slate-400">
+                          </TableCell>
+                          <TableCell className="text-slate-400">
                             {e.client.name} / {e.project.name}
-                          </td>
-                          <td className="px-3 py-2">
+                          </TableCell>
+                          <TableCell>
                             {currentEnd > currentStart ? (
                               <span className="text-xs text-green-400">✓ Fixed</span>
                             ) : (
                               <span className="text-xs text-amber-400">Will skip</span>
                             )}
-                          </td>
-                        </tr>
+                          </TableCell>
+                        </TableRow>
                       );
                     })}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
             </div>
           )}

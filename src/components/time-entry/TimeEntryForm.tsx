@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/Button";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { TimePicker } from "@/components/ui/TimePicker";
 import { ProjectPicker } from "@/components/ui/ProjectPicker";
+import { Textarea } from "@/components/ui/textarea";
 import { VoiceInput } from "./VoiceInput";
 import type { TimeEntry } from "@/lib/types";
 
@@ -175,11 +176,11 @@ export function TimeEntryForm({ onSubmit, initialData }: TimeEntryFormProps) {
           Description
         </label>
         <div className="relative">
-          <textarea
+          <Textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={3}
-            className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 pr-10 text-sm text-slate-200 placeholder-slate-500 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus:outline-none"
+            className="border-slate-700 bg-slate-900 pr-10 text-sm text-slate-200 placeholder-slate-500"
             placeholder="What did you work on?"
           />
           <div className="absolute right-1 top-1">

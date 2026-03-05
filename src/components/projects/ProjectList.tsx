@@ -7,6 +7,9 @@ import { Modal } from "@/components/ui/Modal";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Separator } from "@/components/ui/separator";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { ProjectForm } from "./ProjectForm";
 import type { Project } from "@/lib/types";
 
@@ -51,9 +54,9 @@ export function ProjectList() {
 
   if (loading) {
     return (
-      <div className="animate-pulse space-y-2">
+      <div className="space-y-2">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="h-12 bg-slate-800 rounded-lg border border-slate-700" />
+          <Skeleton key={i} className="h-12 rounded-lg bg-slate-800" />
         ))}
       </div>
     );
@@ -77,20 +80,20 @@ export function ProjectList() {
 
       {/* Active projects — Desktop table */}
       <div className="hidden md:block">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-slate-700 text-left text-slate-400">
-              <th className="pb-2 font-medium">Project Name</th>
-              <th className="pb-2 font-medium">Customer</th>
-              <th className="pb-2 font-medium text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
+        <Table>
+          <TableHeader>
+            <TableRow className="border-slate-700">
+              <TableHead className="text-slate-400">Project Name</TableHead>
+              <TableHead className="text-slate-400">Customer</TableHead>
+              <TableHead className="text-right text-slate-400">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {activeProjects.map((p) => (
-              <tr key={p.id} className="border-b border-slate-700/50">
-                <td className="py-3 text-slate-200">{p.name}</td>
-                <td className="py-3 text-slate-400">{p.customer?.name ?? "—"}</td>
-                <td className="py-3 text-right">
+              <TableRow key={p.id} className="border-slate-700/50">
+                <TableCell className="text-slate-200">{p.name}</TableCell>
+                <TableCell className="text-slate-400">{p.customer?.name ?? "—"}</TableCell>
+                <TableCell className="text-right">
                   <div className="flex gap-2 justify-end">
                     <Button variant="secondary" size="sm" onClick={() => setEditingProject(p)}>
                       Edit
@@ -99,14 +102,14 @@ export function ProjectList() {
                       Deactivate
                     </Button>
                   </div>
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ))}
             {activeProjects.length === 0 && (
-              <tr><td colSpan={3} className="py-6 text-center text-slate-400">No active projects</td></tr>
+              <TableRow><TableCell colSpan={3} className="py-6 text-center text-slate-400">No active projects</TableCell></TableRow>
             )}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
 
       {/* Active projects — Mobile cards */}
@@ -137,19 +140,20 @@ export function ProjectList() {
       {/* Inactive projects section */}
       {inactiveProjects.length > 0 && (
         <>
-          <div className="mt-8 mb-4 border-t border-slate-700 pt-4">
+          <div className="mt-8 mb-4 pt-4">
+            <Separator className="mb-4 bg-slate-700" />
             <h2 className="text-lg font-semibold text-slate-400">Inactive Projects</h2>
           </div>
 
           {/* Desktop table */}
           <div className="hidden md:block">
-            <table className="w-full text-sm">
-              <tbody>
+            <Table>
+              <TableBody>
                 {inactiveProjects.map((p) => (
-                  <tr key={p.id} className="border-b border-slate-700/50">
-                    <td className="py-3 text-slate-400">{p.name}</td>
-                    <td className="py-3 text-slate-400">{p.customer?.name ?? "—"}</td>
-                    <td className="py-3 text-right">
+                  <TableRow key={p.id} className="border-slate-700/50">
+                    <TableCell className="text-slate-400">{p.name}</TableCell>
+                    <TableCell className="text-slate-400">{p.customer?.name ?? "—"}</TableCell>
+                    <TableCell className="text-right">
                       <div className="flex gap-2 justify-end">
                         <Button variant="secondary" size="sm" onClick={() => setEditingProject(p)}>
                           Edit
@@ -158,11 +162,11 @@ export function ProjectList() {
                           Activate
                         </Button>
                       </div>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
 
           {/* Mobile cards */}

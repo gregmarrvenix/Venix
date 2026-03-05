@@ -5,6 +5,9 @@ import { useCustomers } from "@/hooks/useCustomers";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Separator } from "@/components/ui/separator";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { CustomerForm } from "./CustomerForm";
 import type { Customer } from "@/lib/types";
 
@@ -42,9 +45,9 @@ export function CustomerList() {
 
   if (loading) {
     return (
-      <div className="animate-pulse space-y-2">
+      <div className="space-y-2">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="h-12 bg-slate-800 rounded-lg border border-slate-700" />
+          <Skeleton key={i} className="h-12 rounded-lg bg-slate-800" />
         ))}
       </div>
     );
@@ -61,18 +64,18 @@ export function CustomerList() {
 
       {/* Active customers — Desktop table */}
       <div className="hidden md:block">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-slate-700 text-left text-slate-400">
-              <th className="pb-2 font-medium">Name</th>
-              <th className="pb-2 font-medium text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
+        <Table>
+          <TableHeader>
+            <TableRow className="border-slate-700">
+              <TableHead className="text-slate-400">Name</TableHead>
+              <TableHead className="text-right text-slate-400">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {activeCustomers.map((c) => (
-              <tr key={c.id} className="border-b border-slate-700/50">
-                <td className="py-3 text-slate-200">{c.name}</td>
-                <td className="py-3 text-right">
+              <TableRow key={c.id} className="border-slate-700/50">
+                <TableCell className="text-slate-200">{c.name}</TableCell>
+                <TableCell className="text-right">
                   <div className="flex gap-2 justify-end">
                     <Button variant="secondary" size="sm" onClick={() => setEditingCustomer(c)}>
                       Edit
@@ -81,14 +84,14 @@ export function CustomerList() {
                       Deactivate
                     </Button>
                   </div>
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ))}
             {activeCustomers.length === 0 && (
-              <tr><td colSpan={2} className="py-6 text-center text-slate-400">No active customers</td></tr>
+              <TableRow><TableCell colSpan={2} className="py-6 text-center text-slate-400">No active customers</TableCell></TableRow>
             )}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
 
       {/* Active customers — Mobile cards */}
@@ -114,18 +117,19 @@ export function CustomerList() {
       {/* Inactive customers section */}
       {inactiveCustomers.length > 0 && (
         <>
-          <div className="mt-8 mb-4 border-t border-slate-700 pt-4">
+          <div className="mt-8 mb-4 pt-4">
+            <Separator className="mb-4 bg-slate-700" />
             <h2 className="text-lg font-semibold text-slate-400">Inactive Customers</h2>
           </div>
 
           {/* Desktop table */}
           <div className="hidden md:block">
-            <table className="w-full text-sm">
-              <tbody>
+            <Table>
+              <TableBody>
                 {inactiveCustomers.map((c) => (
-                  <tr key={c.id} className="border-b border-slate-700/50">
-                    <td className="py-3 text-slate-400">{c.name}</td>
-                    <td className="py-3 text-right">
+                  <TableRow key={c.id} className="border-slate-700/50">
+                    <TableCell className="text-slate-400">{c.name}</TableCell>
+                    <TableCell className="text-right">
                       <div className="flex gap-2 justify-end">
                         <Button variant="secondary" size="sm" onClick={() => setEditingCustomer(c)}>
                           Edit
@@ -134,11 +138,11 @@ export function CustomerList() {
                           Activate
                         </Button>
                       </div>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
 
           {/* Mobile cards */}

@@ -6,6 +6,7 @@ import { formatDate, formatTime, calculateHours } from "@/lib/timezone";
 import { generateTimeReport } from "@/lib/pdf-generator";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import type { ReportFilterValues } from "./ReportFilters";
 import type { TimeEntry } from "@/lib/types";
 
@@ -186,41 +187,39 @@ export function ReportPreview({ filters }: ReportPreviewProps) {
 
 function EntryTable({ entries, showCustomer }: { entries: TimeEntry[]; showCustomer: boolean }) {
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-slate-700 text-left text-xs text-slate-400">
-            <th className="pb-2 pr-3">Date</th>
-            {showCustomer && <th className="pb-2 pr-3">Customer</th>}
-            <th className="pb-2 pr-3">Project</th>
-            <th className="pb-2 pr-3">Start</th>
-            <th className="pb-2 pr-3">Finish</th>
-            <th className="pb-2 pr-3">Hours</th>
-            <th className="pb-2 pr-3">Contractor</th>
-            <th className="pb-2">Description</th>
-          </tr>
-        </thead>
-        <tbody>
-          {entries.map((e) => {
-            const hours = calculateHours(e.start_time, e.end_time, e.break_minutes ?? 0);
-            return (
-              <tr key={e.id} className="border-b border-slate-700/50">
-                <td className="py-2 pr-3 text-slate-300 whitespace-nowrap">{formatDate(e.entry_date)}</td>
-                {showCustomer && (
-                  <td className="py-2 pr-3 text-slate-300">{e.customer?.name}</td>
-                )}
-                <td className="py-2 pr-3 text-slate-300">{e.project?.name}</td>
-                <td className="py-2 pr-3 text-slate-300 whitespace-nowrap">{formatTime(e.start_time)}</td>
-                <td className="py-2 pr-3 text-slate-300 whitespace-nowrap">{formatTime(e.end_time)}</td>
-                <td className="py-2 pr-3 text-indigo-400">{hours.toFixed(1)}</td>
-                <td className="py-2 pr-3 text-slate-300">{e.contractor?.display_name}</td>
-                <td className="py-2 text-slate-400 truncate max-w-[200px]">{e.description}</td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
+    <Table>
+      <TableHeader>
+        <TableRow className="border-slate-700">
+          <TableHead className="text-xs text-slate-400">Date</TableHead>
+          {showCustomer && <TableHead className="text-xs text-slate-400">Customer</TableHead>}
+          <TableHead className="text-xs text-slate-400">Project</TableHead>
+          <TableHead className="text-xs text-slate-400">Start</TableHead>
+          <TableHead className="text-xs text-slate-400">Finish</TableHead>
+          <TableHead className="text-xs text-slate-400">Hours</TableHead>
+          <TableHead className="text-xs text-slate-400">Contractor</TableHead>
+          <TableHead className="text-xs text-slate-400">Description</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {entries.map((e) => {
+          const hours = calculateHours(e.start_time, e.end_time, e.break_minutes ?? 0);
+          return (
+            <TableRow key={e.id} className="border-slate-700/50">
+              <TableCell className="text-slate-300">{formatDate(e.entry_date)}</TableCell>
+              {showCustomer && (
+                <TableCell className="text-slate-300">{e.customer?.name}</TableCell>
+              )}
+              <TableCell className="text-slate-300">{e.project?.name}</TableCell>
+              <TableCell className="text-slate-300">{formatTime(e.start_time)}</TableCell>
+              <TableCell className="text-slate-300">{formatTime(e.end_time)}</TableCell>
+              <TableCell className="text-indigo-400">{hours.toFixed(1)}</TableCell>
+              <TableCell className="text-slate-300">{e.contractor?.display_name}</TableCell>
+              <TableCell className="text-slate-400 truncate max-w-[200px]">{e.description}</TableCell>
+            </TableRow>
+          );
+        })}
+      </TableBody>
+    </Table>
   );
 }
 

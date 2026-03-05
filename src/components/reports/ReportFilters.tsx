@@ -7,6 +7,8 @@ import { nowAEST } from "@/lib/timezone";
 import { Select } from "@/components/ui/Select";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { Button } from "@/components/ui/Button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 export interface ReportFilterValues {
   customer_id: string;
@@ -196,42 +198,38 @@ export function ReportFilters({ onGenerate, activeTab }: ReportFiltersProps) {
 
       <div>
           <label className="block text-sm text-slate-400 mb-2">Contractors</label>
-          <div className="rounded-lg border border-slate-700 bg-slate-900 p-3 space-y-1.5 max-h-40 overflow-y-auto">
-            <label className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={isAllContractors}
-                onChange={toggleAllContractors}
-                className="rounded border-slate-600 bg-slate-800 text-indigo-500 focus:ring-indigo-500"
-              />
-              {contractorsLoading ? "Loading..." : "All Contractors"}
-            </label>
-            {activeContractors.map((c) => (
-              <label key={c.id} className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={isAllContractors || selectedContractorIds.includes(c.id)}
-                  onChange={() => toggleContractor(c.id)}
-                  className="rounded border-slate-600 bg-slate-800 text-indigo-500 focus:ring-indigo-500"
+          <ScrollArea className="rounded-lg border border-slate-700 bg-slate-900 p-3 max-h-40">
+            <div className="space-y-1.5">
+              <label className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
+                <Checkbox
+                  checked={isAllContractors}
+                  onCheckedChange={toggleAllContractors}
                 />
-                {c.display_name}
+                {contractorsLoading ? "Loading..." : "All Contractors"}
               </label>
-            ))}
-          </div>
+              {activeContractors.map((c) => (
+                <label key={c.id} className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
+                  <Checkbox
+                    checked={isAllContractors || selectedContractorIds.includes(c.id)}
+                    onCheckedChange={() => toggleContractor(c.id)}
+                  />
+                  {c.display_name}
+                </label>
+              ))}
+            </div>
+          </ScrollArea>
         </div>
 
       <label className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
-        <input
-          type="checkbox"
+        <Checkbox
           checked={groupByProject}
-          onChange={(e) => {
-            const newValue = e.target.checked;
+          onCheckedChange={(checked) => {
+            const newValue = checked === true;
             setGroupByProject(newValue);
             if (hasGenerated.current) {
               submitFilters(newValue);
             }
           }}
-          className="rounded border-slate-600 bg-slate-800 text-indigo-500 focus:ring-indigo-500"
         />
         Group by project
       </label>

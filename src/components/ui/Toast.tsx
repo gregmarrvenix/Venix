@@ -4,28 +4,20 @@ import {
   createContext,
   useCallback,
   useContext,
-  useState,
+  useMemo,
   type ReactNode,
 } from "react";
-
-type ToastType = "success" | "error" | "info";
-
-interface Toast {
-  id: number;
-  message: string;
-  type: ToastType;
-}
+import { toast } from "sonner";
+import { Toaster } from "@/components/ui/sonner";
 
 interface ToastActions {
-  addToast: (message: string, type?: ToastType) => void;
+  addToast: (message: string, type?: "success" | "error" | "info") => void;
   success: (message: string) => void;
   error: (message: string) => void;
   info: (message: string) => void;
 }
 
 const ToastContext = createContext<ToastActions | null>(null);
-
-let nextId = 0;
 
 export function useToast(): ToastActions {
   const ctx = useContext(ToastContext);
@@ -34,40 +26,28 @@ export function useToast(): ToastActions {
 }
 
 export function ToastProvider({ children }: { children: ReactNode }) {
-  const [toasts, setToasts] = useState<Toast[]>([]);
+  const addToast = useCallback(
+    (message: string, type: "success" | "error" | "info" = "info") => {
+      if (type === "success") toast.success(message);
+      else if (type === "error") toast.error(message);
+      else toast.info(message);
+    },
+    []
+  );
 
-  const addToast = useCallback((message: string, type: ToastType = "info") => {
-    const id = nextId++;
-    setToasts((prev) => [...prev, { id, message, type }]);
-    setTimeout(() => {
-      setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 3000);
-  }, []);
+  const success = useCallback((message: string) => toast.success(message), []);
+  const error = useCallback((message: string) => toast.error(message), []);
+  const info = useCallback((message: string) => toast.info(message), []);
 
-  const success = useCallback((message: string) => addToast(message, "success"), [addToast]);
-  const error = useCallback((message: string) => addToast(message, "error"), [addToast]);
-  const info = useCallback((message: string) => addToast(message, "info"), [addToast]);
-
-  const borderColors: Record<ToastType, string> = {
-    success: "border-l-green-500",
-    error: "border-l-red-400",
-    info: "border-l-indigo-500",
-  };
+  const value = useMemo(
+    () => ({ addToast, success, error, info }),
+    [addToast, success, error, info]
+  );
 
   return (
-    <ToastContext.Provider value={{ addToast, success, error, info }}>
+    <ToastContext.Provider value={value}>
       {children}
-      <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2" role="status" aria-live="polite">
-        {toasts.map((toast) => (
-          <div
-            key={toast.id}
-            role={toast.type === "error" ? "alert" : undefined}
-            className={`rounded-lg border border-slate-700 border-l-4 ${borderColors[toast.type]} bg-slate-800 px-4 py-3 text-sm text-slate-200 shadow-lg`}
-          >
-            {toast.message}
-          </div>
-        ))}
-      </div>
+      <Toaster position="bottom-right" richColors />
     </ToastContext.Provider>
   );
 }
