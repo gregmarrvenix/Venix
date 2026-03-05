@@ -44,7 +44,7 @@ export default function ReportsPage() {
       </div>
 
       <div className="rounded-xl border border-slate-700 bg-slate-800 p-6">
-        <ReportFilters onGenerate={setFilters} />
+        <ReportFilters onGenerate={setFilters} activeTab={activeTab} />
       </div>
 
       {filters && activeTab === "time" && (

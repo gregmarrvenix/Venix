@@ -82,7 +82,7 @@ export function ExpenseReportPreview({ filters }: ExpenseReportPreviewProps) {
       const pdfBytes = generateExpenseReport({
         customerName: filters.customerName || "Unknown",
         periodLabel: filters.periodLabel || `${filters.from} — ${filters.to}`,
-        expenses,
+        expenses: filtered,
         groupByProject: filters.group_by_project ?? false,
         logoPng,
       });
@@ -103,18 +103,22 @@ export function ExpenseReportPreview({ filters }: ExpenseReportPreviewProps) {
     }
   }
 
+  const filtered = filters.contractor_ids && filters.contractor_ids.length > 0
+    ? expenses.filter((e) => filters.contractor_ids.includes(e.contractor_id))
+    : expenses;
+
   const isAllCustomers = filters.customer_id === "__all__";
   const groupByProject = filters.group_by_project ?? false;
 
   const customerGrouped = isAllCustomers
-    ? groupByCustomerFn(expenses)
+    ? groupByCustomerFn(filtered)
     : null;
 
   const projectGrouped = !isAllCustomers && groupByProject
-    ? groupByProjectFn(expenses)
+    ? groupByProjectFn(filtered)
     : null;
 
-  const totalAmount = expenses.reduce(
+  const totalAmount = filtered.reduce(
     (sum, e) => sum + Number(e.amount),
     0
   );
@@ -129,11 +133,11 @@ export function ExpenseReportPreview({ filters }: ExpenseReportPreviewProps) {
           <p className="text-xs text-slate-500">{filters.from} to {filters.to}</p>
           {!loading && !error && (
             <p className="text-xs text-slate-400 mt-1">
-              {expenses.length} expenses · ${totalAmount.toFixed(2)} total
+              {filtered.length} expenses · ${totalAmount.toFixed(2)} total
             </p>
           )}
         </div>
-        <Button onClick={handleGeneratePdf} loading={generating} size="sm" disabled={loading || expenses.length === 0}>
+        <Button onClick={handleGeneratePdf} loading={generating} size="sm" disabled={loading || filtered.length === 0}>
           Generate PDF
         </Button>
       </div>
@@ -147,7 +151,7 @@ export function ExpenseReportPreview({ filters }: ExpenseReportPreviewProps) {
         <div className="py-8 text-center">
           <p className="text-red-400">{error}</p>
         </div>
-      ) : expenses.length === 0 ? (
+      ) : filtered.length === 0 ? (
         <div className="py-8 text-center text-slate-400">No expenses found for this period</div>
       ) : isAllCustomers && customerGrouped ? (
         <div className="space-y-6">
@@ -174,7 +178,7 @@ export function ExpenseReportPreview({ filters }: ExpenseReportPreviewProps) {
           ))}
         </div>
       ) : (
-        <ExpenseTable expenses={expenses} />
+        <ExpenseTable expenses={filtered} />
       )}
     </div>
   );

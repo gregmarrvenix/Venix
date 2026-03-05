@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useRef } from "react";
 import { useCustomers } from "@/hooks/useCustomers";
+import { useContractors } from "@/hooks/useContractors";
 import { nowAEST } from "@/lib/timezone";
 import { Select } from "@/components/ui/Select";
 import { DatePicker } from "@/components/ui/DatePicker";
@@ -14,11 +15,13 @@ export interface ReportFilterValues {
   to: string;
   group_by_project: boolean;
   periodLabel: string;
+  contractor_ids: string[];
   _fetchKey: number;
 }
 
 interface ReportFiltersProps {
   onGenerate: (filters: ReportFilterValues) => void;
+  activeTab?: "time" | "expenses";
 }
 
 function padDate(d: Date): string {
@@ -44,13 +47,15 @@ function getMonthName(monthsBack: number): string {
   return target.toLocaleString("en-AU", { month: "long", year: "numeric" });
 }
 
-export function ReportFilters({ onGenerate }: ReportFiltersProps) {
+export function ReportFilters({ onGenerate, activeTab }: ReportFiltersProps) {
   const { customers, loading: customersLoading } = useCustomers();
+  const { contractors, loading: contractorsLoading } = useContractors();
   const [customerId, setCustomerId] = useState("");
-  const [period, setPeriod] = useState("1"); // monthsBack as string, or "custom"
+  const [period, setPeriod] = useState("1");
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
   const [groupByProject, setGroupByProject] = useState(false);
+  const [selectedContractorIds, setSelectedContractorIds] = useState<string[]>([]);
   const [error, setError] = useState("");
   const hasGenerated = useRef(false);
   const fetchKeyRef = useRef(0);
@@ -67,6 +72,19 @@ export function ReportFilters({ onGenerate }: ReportFiltersProps) {
     options.push({ value: "custom", label: "Custom date range" });
     return options;
   }, []);
+
+  const activeContractors = useMemo(
+    () => contractors.filter((c) => c.is_active),
+    [contractors]
+  );
+
+  const isAllContractors = selectedContractorIds.length === 0;
+
+  function toggleContractor(id: string) {
+    setSelectedContractorIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  }
 
   function submitFilters(overrideGroupByProject?: boolean) {
     if (!customerId) {
@@ -107,6 +125,7 @@ export function ReportFilters({ onGenerate }: ReportFiltersProps) {
       to,
       group_by_project: overrideGroupByProject ?? groupByProject,
       periodLabel,
+      contractor_ids: selectedContractorIds,
       _fetchKey: fetchKeyRef.current,
     });
   }
@@ -150,6 +169,32 @@ export function ReportFilters({ onGenerate }: ReportFiltersProps) {
           />
         </div>
       )}
+
+      <div>
+          <label className="block text-sm text-slate-400 mb-2">Contractors</label>
+          <div className="rounded-lg border border-slate-700 bg-slate-900 p-3 space-y-1.5 max-h-40 overflow-y-auto">
+            <label className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={isAllContractors}
+                onChange={() => setSelectedContractorIds([])}
+                className="rounded border-slate-600 bg-slate-800 text-indigo-500 focus:ring-indigo-500"
+              />
+              {contractorsLoading ? "Loading..." : "All Contractors"}
+            </label>
+            {activeContractors.map((c) => (
+              <label key={c.id} className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isAllContractors || selectedContractorIds.includes(c.id)}
+                  onChange={() => toggleContractor(c.id)}
+                  className="rounded border-slate-600 bg-slate-800 text-indigo-500 focus:ring-indigo-500"
+                />
+                {c.display_name}
+              </label>
+            ))}
+          </div>
+        </div>
 
       <label className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
         <input

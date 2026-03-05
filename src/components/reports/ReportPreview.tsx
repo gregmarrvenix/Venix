@@ -82,7 +82,7 @@ export function ReportPreview({ filters }: ReportPreviewProps) {
       const pdfBytes = generateTimeReport({
         customerName: filters.customerName || "Unknown",
         periodLabel: filters.periodLabel || `${filters.from} — ${filters.to}`,
-        entries,
+        entries: filtered,
         groupByProject: filters.group_by_project ?? false,
         logoPng,
       });
@@ -103,18 +103,22 @@ export function ReportPreview({ filters }: ReportPreviewProps) {
     }
   }
 
+  const filtered = filters.contractor_ids && filters.contractor_ids.length > 0
+    ? entries.filter((e) => filters.contractor_ids.includes(e.contractor_id))
+    : entries;
+
   const isAllCustomers = filters.customer_id === "__all__";
   const groupByProject = filters.group_by_project ?? false;
 
   const customerGrouped = isAllCustomers
-    ? groupByCustomerFn(entries)
+    ? groupByCustomerFn(filtered)
     : null;
 
   const projectGrouped = !isAllCustomers && groupByProject
-    ? groupByProjectFn(entries)
+    ? groupByProjectFn(filtered)
     : null;
 
-  const totalHours = entries.reduce(
+  const totalHours = filtered.reduce(
     (sum, e) => sum + calculateHours(e.start_time, e.end_time, e.break_minutes ?? 0),
     0
   );
@@ -129,11 +133,11 @@ export function ReportPreview({ filters }: ReportPreviewProps) {
           <p className="text-xs text-slate-500">{filters.from} to {filters.to}</p>
           {!loading && !error && (
             <p className="text-xs text-slate-400 mt-1">
-              {entries.length} entries · {totalHours.toFixed(2)} hours total
+              {filtered.length} entries · {totalHours.toFixed(2)} hours total
             </p>
           )}
         </div>
-        <Button onClick={handleGeneratePdf} loading={generating} size="sm" disabled={loading || entries.length === 0}>
+        <Button onClick={handleGeneratePdf} loading={generating} size="sm" disabled={loading || filtered.length === 0}>
           Generate PDF
         </Button>
       </div>
@@ -147,7 +151,7 @@ export function ReportPreview({ filters }: ReportPreviewProps) {
         <div className="py-8 text-center">
           <p className="text-red-400">{error}</p>
         </div>
-      ) : entries.length === 0 ? (
+      ) : filtered.length === 0 ? (
         <div className="py-8 text-center text-slate-400">No entries found for this period</div>
       ) : isAllCustomers && customerGrouped ? (
         <div className="space-y-6">
@@ -174,7 +178,7 @@ export function ReportPreview({ filters }: ReportPreviewProps) {
           ))}
         </div>
       ) : (
-        <EntryTable entries={entries} showCustomer={false} />
+        <EntryTable entries={filtered} showCustomer={false} />
       )}
     </div>
   );
