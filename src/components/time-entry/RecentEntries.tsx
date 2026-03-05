@@ -140,6 +140,20 @@ export function RecentEntries({ refreshKey }: RecentEntriesProps) {
   }
 
   const showContractorName = isAllContractors || selectedContractorIds.length > 1;
+  const [showContractorFilter, setShowContractorFilter] = useState(false);
+  const [showCustomerFilter, setShowCustomerFilter] = useState(false);
+
+  const contractorLabel = isAllContractors
+    ? "All Contractors"
+    : selectedContractorIds.filter((x) => x !== "__none__").length === 1
+      ? activeContractors.find((c) => c.id === selectedContractorIds[0])?.display_name ?? "1 Contractor"
+      : `${selectedContractorIds.filter((x) => x !== "__none__").length} Contractors`;
+
+  const customerLabel = isAllCustomers
+    ? "All Customers"
+    : selectedCustomerIds.filter((x) => x !== "__none__").length === 1
+      ? activeCustomers.find((c) => c.id === selectedCustomerIds[0])?.name ?? "1 Customer"
+      : `${selectedCustomerIds.filter((x) => x !== "__none__").length} Customers`;
 
   const pageSizeOptions = [
     { value: "50", label: "50 entries" },
@@ -149,16 +163,41 @@ export function RecentEntries({ refreshKey }: RecentEntriesProps) {
 
   return (
     <>
-      <div className="mb-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="mb-4 flex flex-wrap items-end gap-3">
         <div>
-          <label className="block text-sm text-slate-400 mb-2">Contractors</label>
+          <label className="block text-sm text-slate-400 mb-1">Contractors</label>
+          <button
+            type="button"
+            onClick={() => { setShowContractorFilter((v) => !v); setShowCustomerFilter(false); }}
+            className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-200 hover:border-slate-600 transition-colors"
+          >
+            {contractorLabel}
+          </button>
+        </div>
+        <div>
+          <label className="block text-sm text-slate-400 mb-1">Customers</label>
+          <button
+            type="button"
+            onClick={() => { setShowCustomerFilter((v) => !v); setShowContractorFilter(false); }}
+            className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-200 hover:border-slate-600 transition-colors"
+          >
+            {customerLabel}
+          </button>
+        </div>
+        <Select
+          label="Show"
+          value={pageSize}
+          onChange={(e) => setPageSize(e.target.value)}
+          options={pageSizeOptions}
+        />
+      </div>
+
+      {showContractorFilter && (
+        <div className="mb-4">
           <ScrollArea className="rounded-lg border border-slate-700 bg-slate-900 p-3 max-h-40">
             <div className="space-y-1.5">
               <label className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
-                <Checkbox
-                  checked={isAllContractors}
-                  onCheckedChange={toggleAllContractors}
-                />
+                <Checkbox checked={isAllContractors} onCheckedChange={toggleAllContractors} />
                 {contractorsLoading ? "Loading..." : "All Contractors"}
               </label>
               {activeContractors.map((c) => (
@@ -173,15 +212,14 @@ export function RecentEntries({ refreshKey }: RecentEntriesProps) {
             </div>
           </ScrollArea>
         </div>
-        <div>
-          <label className="block text-sm text-slate-400 mb-2">Customers</label>
+      )}
+
+      {showCustomerFilter && (
+        <div className="mb-4">
           <ScrollArea className="rounded-lg border border-slate-700 bg-slate-900 p-3 max-h-40">
             <div className="space-y-1.5">
               <label className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
-                <Checkbox
-                  checked={isAllCustomers}
-                  onCheckedChange={toggleAllCustomers}
-                />
+                <Checkbox checked={isAllCustomers} onCheckedChange={toggleAllCustomers} />
                 {customersLoading ? "Loading..." : "All Customers"}
               </label>
               {activeCustomers.map((c) => (
@@ -196,13 +234,7 @@ export function RecentEntries({ refreshKey }: RecentEntriesProps) {
             </div>
           </ScrollArea>
         </div>
-        <Select
-          label="Show"
-          value={pageSize}
-          onChange={(e) => setPageSize(e.target.value)}
-          options={pageSizeOptions}
-        />
-      </div>
+      )}
 
       {loading ? (
         <div className="space-y-3">

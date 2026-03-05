@@ -199,30 +199,52 @@ export function ReportFilters({ onGenerate, activeTab }: ReportFiltersProps) {
     });
   }
 
+  const [showCustomerFilter, setShowCustomerFilter] = useState(false);
+  const [showContractorFilter, setShowContractorFilter] = useState(false);
+
+  const realCustomerIds = selectedCustomerIds.filter((x) => x !== "__none__");
+  const customerLabel = isAllCustomers
+    ? "All Customers"
+    : realCustomerIds.length === 1
+      ? activeCustomers.find((c) => c.id === realCustomerIds[0])?.name ?? "1 Customer"
+      : `${realCustomerIds.length} Customers`;
+
+  const contractorLabel = isAllContractors
+    ? "All Contractors"
+    : selectedContractorIds.filter((x) => x !== "__none__").length === 1
+      ? activeContractors.find((c) => c.id === selectedContractorIds.find((x) => x !== "__none__"))?.display_name ?? "1 Contractor"
+      : `${selectedContractorIds.filter((x) => x !== "__none__").length} Contractors`;
+
   return (
     <div className="space-y-4">
       <div>
-        <label className="block text-sm text-slate-400 mb-2">Customers</label>
-        <ScrollArea className="rounded-lg border border-slate-700 bg-slate-900 p-3 max-h-40">
-          <div className="space-y-1.5">
-            <label className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
-              <Checkbox
-                checked={isAllCustomers}
-                onCheckedChange={toggleAllCustomers}
-              />
-              {customersLoading ? "Loading..." : "All Customers"}
-            </label>
-            {activeCustomers.map((c) => (
-              <label key={c.id} className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
-                <Checkbox
-                  checked={isAllCustomers || selectedCustomerIds.includes(c.id)}
-                  onCheckedChange={() => toggleCustomer(c.id)}
-                />
-                {c.name}
+        <label className="block text-sm text-slate-400 mb-1">Customer</label>
+        <button
+          type="button"
+          onClick={() => { setShowCustomerFilter((v) => !v); setShowContractorFilter(false); }}
+          className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-left text-sm text-slate-200 hover:border-slate-600 transition-colors"
+        >
+          {customerLabel}
+        </button>
+        {showCustomerFilter && (
+          <ScrollArea className="mt-2 rounded-lg border border-slate-700 bg-slate-900 p-3 max-h-40">
+            <div className="space-y-1.5">
+              <label className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
+                <Checkbox checked={isAllCustomers} onCheckedChange={toggleAllCustomers} />
+                {customersLoading ? "Loading..." : "All Customers"}
               </label>
-            ))}
-          </div>
-        </ScrollArea>
+              {activeCustomers.map((c) => (
+                <label key={c.id} className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
+                  <Checkbox
+                    checked={isAllCustomers || selectedCustomerIds.includes(c.id)}
+                    onCheckedChange={() => toggleCustomer(c.id)}
+                  />
+                  {c.name}
+                </label>
+              ))}
+            </div>
+          </ScrollArea>
+        )}
         {error && error.includes("customer") && <p className="mt-1 text-sm text-red-400">{error}</p>}
       </div>
 
@@ -249,14 +271,19 @@ export function ReportFilters({ onGenerate, activeTab }: ReportFiltersProps) {
       )}
 
       <div>
-          <label className="block text-sm text-slate-400 mb-2">Contractors</label>
-          <ScrollArea className="rounded-lg border border-slate-700 bg-slate-900 p-3 max-h-40">
+        <label className="block text-sm text-slate-400 mb-1">Contractors</label>
+        <button
+          type="button"
+          onClick={() => { setShowContractorFilter((v) => !v); setShowCustomerFilter(false); }}
+          className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-left text-sm text-slate-200 hover:border-slate-600 transition-colors"
+        >
+          {contractorLabel}
+        </button>
+        {showContractorFilter && (
+          <ScrollArea className="mt-2 rounded-lg border border-slate-700 bg-slate-900 p-3 max-h-40">
             <div className="space-y-1.5">
               <label className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
-                <Checkbox
-                  checked={isAllContractors}
-                  onCheckedChange={toggleAllContractors}
-                />
+                <Checkbox checked={isAllContractors} onCheckedChange={toggleAllContractors} />
                 {contractorsLoading ? "Loading..." : "All Contractors"}
               </label>
               {activeContractors.map((c) => (
@@ -270,7 +297,8 @@ export function ReportFilters({ onGenerate, activeTab }: ReportFiltersProps) {
               ))}
             </div>
           </ScrollArea>
-        </div>
+        )}
+      </div>
 
       <label className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
         <Checkbox
