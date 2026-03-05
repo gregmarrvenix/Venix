@@ -80,10 +80,34 @@ export function ReportFilters({ onGenerate, activeTab }: ReportFiltersProps) {
 
   const isAllContractors = selectedContractorIds.length === 0;
 
+  function toggleAllContractors() {
+    if (isAllContractors) {
+      // Deselect all — empty selection means nothing selected
+      setSelectedContractorIds(["__none__"]);
+    } else {
+      // Select all
+      setSelectedContractorIds([]);
+    }
+  }
+
   function toggleContractor(id: string) {
-    setSelectedContractorIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-    );
+    if (isAllContractors) {
+      // Switching from "all" to just this one
+      setSelectedContractorIds([id]);
+      return;
+    }
+    setSelectedContractorIds((prev) => {
+      const next = prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id];
+      // If all individually selected, revert to "all" mode
+      if (next.length === activeContractors.length && activeContractors.every((c) => next.includes(c.id))) {
+        return [];
+      }
+      // If none selected, use sentinel
+      if (next.length === 0 || (next.length === 1 && next[0] === "__none__")) {
+        return ["__none__"];
+      }
+      return next.filter((x) => x !== "__none__");
+    });
   }
 
   function submitFilters(overrideGroupByProject?: boolean) {
@@ -177,7 +201,7 @@ export function ReportFilters({ onGenerate, activeTab }: ReportFiltersProps) {
               <input
                 type="checkbox"
                 checked={isAllContractors}
-                onChange={() => setSelectedContractorIds([])}
+                onChange={toggleAllContractors}
                 className="rounded border-slate-600 bg-slate-800 text-indigo-500 focus:ring-indigo-500"
               />
               {contractorsLoading ? "Loading..." : "All Contractors"}
